@@ -1,11 +1,14 @@
 from fastapi import FastAPI
-from app.core.config import settings
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.config import settings
+from app.db.base import Base
+from app.db.session import engine
 
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    debug=settings.app_debug
+    debug=settings.app_debug,
 )
 
 app.add_middleware(
@@ -16,13 +19,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def ping():
-    return {"message": "Hello FastAPI!"}
 
-@app.get("/sj")
-async def ping():
-    return {"message": "Hello sj!"}
+@app.on_event("startup")
+def on_startup() -> None:
+    """애플리케이션 시작 이벤트"""
+    Base.metadata.create_all(bind=engine)
+
+
+@app.get("/")
+def root():
+    """루트 엔드포인트"""
+    return {"message": "IEP Planning Support API"}
+
 
 @app.get("/health")
 def health_check():
@@ -30,6 +38,5 @@ def health_check():
     return {
         "status": "healthy",
         "app": settings.app_name,
-        "version": settings.app_version
+        "version": settings.app_version,
     }
-
