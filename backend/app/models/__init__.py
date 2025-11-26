@@ -4,6 +4,7 @@
 
 from app.models.student import Student  # noqa
 from app.models.iep_version import IEPVersion  # noqa
+from app.models.iep_file import IEPFile  # noqa
 
-__all__ = ["Student", "IEPVersion"]
+__all__ = ["Student", "IEPVersion", "IEPFile"]
 
