@@ -1,0 +1,362 @@
+.syllabus-page {
+  min-height: 100vh;
+  background-color: var(--color-background);
+}
+
+.syllabus-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* 과목 이름 바 */
+.subject-bar {
+  width: 100%;
+  background-color: rgba(74, 169, 233, 0.6);
+  padding: 1rem 0;
+  margin-bottom: 2rem;
+  box-sizing: border-box;
+}
+
+.subject-bar-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.subject-name {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 500; /* medium */
+  font-size: 24px;
+  color: var(--color-contentPrimary);
+  margin: 0;
+  padding: 0;
+}
+
+/* 섹션 */
+.syllabus-section {
+  margin-bottom: 3rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 500; /* medium */
+  font-size: 24px;
+  color: var(--color-contentPrimary);
+  margin: 0;
+  padding: 0;
+}
+
+.section-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* 저장하기 버튼 스타일 */
+.button-save {
+  background-color: var(--color-primary) !important;
+}
+
+/* AI 버튼 작게 만들기 */
+.ai-button {
+  width: auto !important;
+  min-width: auto !important;
+  padding: 0.5rem 1rem !important;
+  height: 42px !important;
+}
+
+.ai-button-small {
+  width: auto !important;
+  min-width: auto !important;
+  padding: 0.375rem 0.75rem !important;
+  height: auto !important;
+  font-size: 14px !important;
+}
+
+.ai-button .button-text,
+.ai-button-small .button-text {
+  font-size: 16px !important;
+}
+
+/* 목표 표 */
+.goal-table-container {
+  margin-bottom: 3rem;
+}
+
+.goal-table-title {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 500; /* medium */
+  font-size: 20px;
+  color: var(--color-contentPrimary);
+  margin: 0 0 1rem 0;
+  padding: 0;
+}
+
+.goal-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: var(--color-white);
+  border-radius: 12px;
+  overflow: hidden;
+  display: table;
+  table-layout: fixed;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.goal-table td {
+  padding: 1rem;
+  text-align: left;
+  border: 1px solid var(--color-primary);
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 400; /* regular */
+  font-size: 16px;
+}
+
+.goal-domain-cell {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+  min-width: 200px;
+  width: 200px;
+  text-align: center;
+}
+
+.goal-content-cell {
+  background-color: var(--color-tertiary);
+  width: auto;
+}
+
+.goal-text {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 400; /* regular */
+  font-size: 16px;
+  color: var(--color-contentPrimary);
+  min-height: 1.5rem;
+}
+
+.goal-input {
+  width: 100%;
+  min-height: 80px;
+  padding: 0.5rem;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 400; /* regular */
+  font-size: 16px;
+  color: var(--color-contentPrimary);
+  background-color: transparent;
+  border: none;
+  border-radius: 4px;
+  resize: none;
+  box-sizing: border-box;
+}
+
+.empty-message {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: var(--color-contentTertiay);
+  padding: 2rem;
+  text-align: center;
+}
+
+/* 도메인 탭 */
+.domain-tabs {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.domain-tabs-actions {
+  margin-left: auto;
+}
+
+/* 교육 계획 표 */
+.plan-table-container {
+  margin-top: 2rem;
+  width: 100%;
+}
+
+.plan-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.plan-table td {
+  padding: 1rem;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  border: 1px solid var(--color-primary);
+  vertical-align: top;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* 헤더 행 */
+.plan-header-row {
+  display: table-row;
+}
+
+.plan-header-row td {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+  text-align: center;
+  vertical-align: middle;
+  display: table-cell;
+  font-size: 16px;
+}
+
+.plan-empty-cell {
+  width: 4% !important;
+  min-width: 60px;
+}
+
+.plan-content-header {
+  width: 57.5% !important;
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+  position: relative;
+}
+
+.plan-content-header span {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.plan-content-header .ai-button-small {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.plan-material-header {
+  width: 38.5% !important;
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+  position: relative;
+}
+
+.plan-material-header span {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.plan-material-header .ai-button-small {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* 데이터 행 - 주차 번호 */
+.plan-week-number {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+  text-align: center;
+  vertical-align: middle;
+  width: 4% !important;
+  min-width: 60px;
+  font-size: 16px;
+}
+
+/* 데이터 행 - 내용 셀 */
+.plan-content-cell {
+  background-color: var(--color-tertiary);
+  width: 57.5% !important;
+}
+
+.plan-material-cell {
+  background-color: var(--color-tertiary);
+  width: 38.5% !important;
+}
+
+.plan-content-input {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.75rem;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: var(--color-contentPrimary);
+  background-color: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  box-sizing: border-box;
+}
+
+.plan-content-text {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: var(--color-contentPrimary);
+  min-height: 1.5rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.5;
+}
+
+/* 하단 버튼 */
+.syllabus-footer {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .syllabus-container {
+    padding: 1rem;
+  }
+
+  .subject-name {
+    font-size: 32px;
+  }
+
+  .section-title {
+    font-size: 32px;
+  }
+
+  .goal-table-title {
+    font-size: 24px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .section-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .content-cell-wrapper {
+    flex-direction: column;
+  }
+
+  .content-cell-wrapper .ai-button-small {
+    width: 100%;
+  }
+}
+
