@@ -21,8 +21,8 @@ class Student(Base):
     name: Mapped[str]
     birth: Mapped[date]
 
-    # Relationships (IEPVersion 모델 구현 전까지 임시 주석 처리)
-    # iep_versions: Mapped[list["IEPVersion"]] = relationship(
-    #     back_populates="student",
-    #     cascade="all, delete-orphan",
-    # )
+    # Relationships
+    iep_versions: Mapped[list["IEPVersion"]] = relationship(
+        back_populates="student",
+        cascade="all, delete-orphan",
+    )

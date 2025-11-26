@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import students
+from app.api import students, iep_versions
 from app.core.config import settings
 from app.db.base import Base
 from app.db.session import engine
@@ -32,6 +32,7 @@ def on_startup() -> None:
 
 # Include routers
 app.include_router(students.router)
+app.include_router(iep_versions.router)
 
 
 @app.get("/")

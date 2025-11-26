@@ -3,6 +3,7 @@
 """
 
 from app.models.student import Student  # noqa
+from app.models.iep_version import IEPVersion  # noqa
 
-__all__ = ["Student"]
+__all__ = ["Student", "IEPVersion"]
 
