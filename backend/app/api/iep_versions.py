@@ -3,12 +3,18 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.iep_version import IEPVersion
 from app.models.student import Student
 from app.schemas.iep_version import IEPVersionCreate, IEPVersionResponse
+from app.services.document_generator import (
+    generate_docx_stream,
+    DocumentNotFoundError,
+    DocumentGenerationError,
+)
 
 router = APIRouter(tags=["IEP Versions"])
 
@@ -109,4 +115,56 @@ def get_latest_iep_version(
         )
     
     return latest_version
+
+
+@router.get("/iep-versions/{iep_version_id}/docx")
+def download_iep_docx(
+    iep_version_id: UUID,
+    db: Session = Depends(get_db),
+) -> StreamingResponse:
+    """
+    IEP DOCX 파일 다운로드
+    
+    IEP 버전의 3개 JSON 파일(goals, weekly_plan, weekly_materials)을 읽어
+    DOCX 문서를 동적으로 생성하고 다운로드를 제공합니다.
+    
+    - **iep_version_id**: IEP 버전 ID (UUID)
+    
+    Returns:
+        StreamingResponse: DOCX 파일 스트림
+        - Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+        - Content-Disposition: attachment; filename=IEP_{iep_version_id}.docx
+    
+    Raises:
+        404: IEP 버전이나 필수 파일(goals, weekly_plan, weekly_materials)이 없을 때
+        500: 문서 생성 중 오류 발생 시
+    """
+    try:
+        # DOCX 스트림 생성
+        docx_stream = generate_docx_stream(db, iep_version_id)
+        
+        # StreamingResponse로 다운로드 제공
+        return StreamingResponse(
+            docx_stream,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={
+                "Content-Disposition": f"attachment; filename=IEP_{iep_version_id}.docx"
+            }
+        )
+    
+    except DocumentNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except DocumentGenerationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate DOCX: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {str(e)}"
+        )
 
