@@ -43,9 +43,8 @@ def generate_goals(student_profile: dict[str, Any]) -> dict:
             - math_domain (list[str]): 수학 도메인 선택
     
     Returns:
-        dict: 연간/학기 목표 (선택된 도메인만)
-            - annual_{domain}_goal: 연간 목표
-            - semester_{domain}_goal: 학기 목표
+        dict: 연간/학기 목표 (선택된 도메인만, 도메인 키별 객체)
+            - {domain}: {"annual_goal": str, "semester_goal": str}
     
     Note:
         실제 AI 로직으로 대체 필요
@@ -66,24 +65,24 @@ def generate_goals(student_profile: dict[str, Any]) -> dict:
     # 국어 도메인별 목표
     for domain in korean_domains:
         domain_key = _get_domain_key(domain)
-        goals[f"annual_{domain_key}_goal"] = (
-            f"[연간 목표 - 국어/{domain}] {student_name} 학생의 {domain} 능력 향상 (Mock)"
-        )
-        goals[f"semester_{domain_key}_goal"] = (
-            f"[학기 목표 - 국어/{domain}] {grade}학년 {domain} 핵심 개념 습득 "
-            f"({start_date} ~ {end_date}) (Mock)"
-        )
+        goals[domain_key] = {
+            "annual_goal": f"[연간 목표 - 국어/{domain}] {student_name} 학생의 {domain} 능력 향상 (Mock)",
+            "semester_goal": (
+                f"[학기 목표 - 국어/{domain}] {grade}학년 {domain} 핵심 개념 습득 "
+                f"({start_date} ~ {end_date}) (Mock)"
+            ),
+        }
     
     # 수학 도메인별 목표
     for domain in math_domains:
         domain_key = _get_domain_key(domain)
-        goals[f"annual_{domain_key}_goal"] = (
-            f"[연간 목표 - 수학/{domain}] {student_name} 학생의 {domain} 능력 향상 (Mock)"
-        )
-        goals[f"semester_{domain_key}_goal"] = (
-            f"[학기 목표 - 수학/{domain}] {grade}학년 {domain} 핵심 개념 습득 "
-            f"({start_date} ~ {end_date}) (Mock)"
-        )
+        goals[domain_key] = {
+            "annual_goal": f"[연간 목표 - 수학/{domain}] {student_name} 학생의 {domain} 능력 향상 (Mock)",
+            "semester_goal": (
+                f"[학기 목표 - 수학/{domain}] {grade}학년 {domain} 핵심 개념 습득 "
+                f"({start_date} ~ {end_date}) (Mock)"
+            ),
+        }
     
     return goals
 
@@ -97,7 +96,7 @@ def generate_weekly_plan(student_profile: dict[str, Any]) -> dict:
     
     Returns:
         dict: 주차별 학습 내용 (20주, 선택된 도메인만)
-            - {domain}_weeklyContent: 20개 요소 배열
+            - {domain}: [{"week": int, "content": str}, ...]
     
     Note:
         실제 AI 로직으로 대체 필요
@@ -112,8 +111,8 @@ def generate_weekly_plan(student_profile: dict[str, Any]) -> dict:
     all_domains = korean_domains + math_domains
     for domain in all_domains:
         domain_key = _get_domain_key(domain)
-        weekly_plan[f"{domain_key}_weeklyContent"] = [
-            f"[{domain}] {week}주차 학습 내용 (Mock)"
+        weekly_plan[domain_key] = [
+            {"week": week, "content": f"[{domain}] {week}주차 학습 내용 (Mock)"}
             for week in range(1, 21)
         ]
     
@@ -129,7 +128,7 @@ def generate_weekly_materials(student_profile: dict[str, Any]) -> dict:
     
     Returns:
         dict: 주차별 학습 자료 (20주, 선택된 도메인만)
-            - {domain}_weekly_material: 20개 주차별 자료 배열
+            - {domain}: [{"week": int, "material_url": str}, ...]
     
     Note:
         실제 AI 로직으로 대체 필요
@@ -144,16 +143,12 @@ def generate_weekly_materials(student_profile: dict[str, Any]) -> dict:
     all_domains = korean_domains + math_domains
     for domain in all_domains:
         domain_key = _get_domain_key(domain)
-        weekly_materials[f"{domain_key}_weekly_material"] = [
+        weekly_materials[domain_key] = [
             {
                 "week": week,
-                "materials": [
-                    {
-                        "title": f"{domain} {week}주차 학습자료 예시 (Mock)",
-                        "file_type": "PDF",
-                        "url": f"https://example.com/edunet/{domain_key}/week{week}/material1.pdf"
-                    }
-                ]
+                "material_url": (
+                    f"https://example.com/edunet/{domain_key}/week{week}/material1.pdf"
+                ),
             }
             for week in range(1, 21)
         ]
@@ -190,4 +185,3 @@ def _get_domain_key(domain: str) -> str:
 
 
 __all__ = ["generate_goals", "generate_weekly_plan", "generate_weekly_materials"]
-
