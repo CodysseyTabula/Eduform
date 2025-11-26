@@ -1,9 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api import students
 from app.core.config import settings
 from app.db.base import Base
 from app.db.session import engine
+
+# Import all models to register them with Base.metadata
+import app.models  # noqa
 
 app = FastAPI(
     title=settings.app_name,
@@ -24,6 +28,10 @@ app.add_middleware(
 def on_startup() -> None:
     """애플리케이션 시작 이벤트"""
     Base.metadata.create_all(bind=engine)
+
+
+# Include routers
+app.include_router(students.router)
 
 
 @app.get("/")
