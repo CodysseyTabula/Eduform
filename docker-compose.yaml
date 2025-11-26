@@ -1,21 +1,54 @@
 services:
-  backend:
-    build: ./backend
-    ports:
-      - '8000:8000'
-    volumes:
-      - ./backend:/app
+  db:
+    image: postgres:16
+    container_name: iep_db
     environment:
-      - PYTHONUNBUFFERED=1
-    restart: unless-stopped
-
-  frontend:
-    build: ./frontend
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-iep_db}
     ports:
-      - '5173:5173'
+      - "${DB_PORT:-5432}:5432"
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - iep_network
+
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: iep_backend
     depends_on:
-      - backend
-    restart: unless-stopped
+      db:
+        condition: service_healthy
+    environment:
+      # Docker 환경에서 DB_HOST를 'db'로 오버라이드
+      DB_HOST: db
+      DB_PORT: ${DB_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-iep_db}
+      STORAGE_PATH: /storage
+      APP_PORT: ${APP_PORT:-8000}
+      APP_ENV: ${APP_ENV:-docker}
+      APP_DEBUG: ${APP_DEBUG:-true}
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/storage:/storage
+    networks:
+      - iep_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
+
+networks:
+  iep_network:
+    driver: bridge
