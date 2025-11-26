@@ -40,12 +40,21 @@
   transform: rotate(180deg);
 }
 
+.dropdown.disabled .dropdown-button {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dropdown.disabled .dropdown-button:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
 .dropdown-menu {
   position: absolute;
   top: calc(100% + 0.5rem);
   left: 0;
   right: 0;
-  background-color: var(--color-contentSecondary);
+  background-color: var(--color-white);
   border-radius: 12px;
   padding: 0.5rem 0;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
@@ -69,7 +78,7 @@
 }
 
 .dropdown-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--color-tertiary);
 }
 
 @media (max-width: 768px) {
