@@ -200,3 +200,153 @@ export const getIEPVersions = async (studentId: string): Promise<Omit<IEPVersion
   return response.json();
 };
 
+export interface IEPFile {
+  id: string;
+  file_type: string;
+  file_path: string;
+  updated_at: string; // ISO8601
+}
+
+export interface CreateIEPFileRequest {
+  iep_version_id: string;
+  file_type: string;
+  file: File;
+}
+
+export interface CreateIEPFileResponse {
+  id: string;
+  iep_version_id: string;
+  file_type: string;
+  file_path: string;
+  updated_at: string; // ISO8601
+}
+
+export interface UpdateIEPFileRequest {
+  file: File;
+}
+
+export interface UpdateIEPFileResponse {
+  id: string;
+  iep_version_id: string;
+  file_type: string;
+  file_path: string;
+  updated_at: string; // ISO8601
+}
+
+/**
+ * IEP 파일 목록 조회
+ */
+export const getIEPFiles = async (iepVersionId: string): Promise<IEPFile[]> => {
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return [];
+  }
+
+  const response = await fetch(`${API_BASE_URL}/iep-versions/${iepVersionId}/iep-files`);
+  if (!response.ok) {
+    throw new Error('IEP 파일 목록을 불러오는데 실패했습니다.');
+  }
+  return response.json();
+};
+
+/**
+ * IEP 파일 생성 (처음 생성)
+ */
+export const createIEPFile = async (
+  data: CreateIEPFileRequest
+): Promise<CreateIEPFileResponse> => {
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      id: `mock-file-${Date.now()}`,
+      iep_version_id: data.iep_version_id,
+      file_type: data.file_type,
+      file_path: `/files/${data.iep_version_id}.json`,
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  const formData = new FormData();
+  formData.append('iep_version_id', data.iep_version_id);
+  formData.append('file_type', data.file_type);
+  formData.append('file', data.file);
+
+  const response = await fetch(`${API_BASE_URL}/iep-files`, {
+    method: 'POST',
+    body: formData,
+  });
+  
+  if (!response.ok) {
+    throw new Error('IEP 파일 생성에 실패했습니다.');
+  }
+  
+  return response.json();
+};
+
+/**
+ * IEP 파일 수정 (기존 파일 수정)
+ */
+export const updateIEPFile = async (
+  fileId: string,
+  data: UpdateIEPFileRequest
+): Promise<UpdateIEPFileResponse> => {
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      id: fileId,
+      iep_version_id: `mock-iep-${fileId}`,
+      file_type: 'json',
+      file_path: `/files/${fileId}.json`,
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  const formData = new FormData();
+  formData.append('file', data.file);
+
+  const response = await fetch(`${API_BASE_URL}/iep-files/${fileId}`, {
+    method: 'PUT',
+    body: formData,
+  });
+  
+  if (!response.ok) {
+    throw new Error('IEP 파일 수정에 실패했습니다.');
+  }
+  
+  return response.json();
+};
+
+/**
+ * IEP JSON 파일 내용 조회
+ */
+export const getIEPFileContent = async (filePath: string): Promise<any> => {
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    // 더미 데이터 - 빈 템플릿 반환
+    return null;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${filePath}`);
+  if (!response.ok) {
+    throw new Error('IEP 파일 내용을 불러오는데 실패했습니다.');
+  }
+  return response.json();
+};
+
+/**
+ * 워드 파일 다운로드
+ */
+export const downloadIEPDocx = async (iepVersionId: string): Promise<Blob> => {
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    // 더미 데이터 - 빈 Blob 반환
+    return new Blob([''], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  }
+
+  const response = await fetch(`${API_BASE_URL}/iep-versions/${iepVersionId}/docx`);
+  if (!response.ok) {
+    throw new Error('워드 파일 다운로드에 실패했습니다.');
+  }
+  return response.blob();
+};
+
