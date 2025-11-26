@@ -6,7 +6,7 @@ from __future__ import annotations
 import os
 import sys
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -95,7 +95,7 @@ def sample_iep_data(db_session, tmp_path, monkeypatch):
         year="2024",
         semester="1학기",
         grade="3",
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
     db_session.add(iep_version)
     db_session.commit()
@@ -172,7 +172,7 @@ def sample_iep_data(db_session, tmp_path, monkeypatch):
             iep_version_id=iep_version.id,
             file_type=file_type,
             file_path=file_path,
-            updated_at=datetime.utcnow(),
+            updated_at=datetime.now(timezone.utc),
         )
         db_session.add(iep_file)
         files[file_type] = iep_file
