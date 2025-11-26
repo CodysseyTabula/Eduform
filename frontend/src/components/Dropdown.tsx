@@ -6,13 +6,15 @@ interface DropdownProps {
   placeholder?: string;
   onSelect?: (option: string) => void;
   className?: string;
+  disabled?: boolean;
 }
 
 const Dropdown: React.FC<DropdownProps> = ({ 
   options, 
   placeholder = '선택하세요',
   onSelect,
-  className 
+  className,
+  disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -31,7 +33,14 @@ const Dropdown: React.FC<DropdownProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (disabled && isOpen) {
+      setIsOpen(false);
+    }
+  }, [disabled, isOpen]);
+
   const handleSelect = (option: string) => {
+    if (disabled) return;
     setSelectedOption(option);
     setIsOpen(false);
     if (onSelect) {
@@ -39,12 +48,19 @@ const Dropdown: React.FC<DropdownProps> = ({
     }
   };
 
+  const handleButtonClick = () => {
+    if (!disabled) {
+      setIsOpen(!isOpen);
+    }
+  };
+
   return (
-    <div className={`dropdown ${className || ''}`} ref={dropdownRef}>
+    <div className={`dropdown ${className || ''} ${disabled ? 'disabled' : ''}`} ref={dropdownRef}>
       <button
         className="dropdown-button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleButtonClick}
         type="button"
+        disabled={disabled}
       >
         <span className="dropdown-text">
           {selectedOption || placeholder}
