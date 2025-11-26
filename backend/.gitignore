@@ -7,6 +7,7 @@ __pycache__/
 
 # Virtual Environment
 .venv/
+venv/
 
 # Environment Variables
 .env
@@ -29,6 +30,9 @@ htmlcov/
 # Database
 *.db
 *.sqlite3
+
+# Test files
+*.docx
 
 # macOS
 .DS_Store

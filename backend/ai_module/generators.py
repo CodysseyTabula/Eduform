@@ -185,3 +185,4 @@ def _get_domain_key(domain: str) -> str:
 
 
 __all__ = ["generate_goals", "generate_weekly_plan", "generate_weekly_materials"]
+
