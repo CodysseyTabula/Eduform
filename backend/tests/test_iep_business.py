@@ -135,6 +135,8 @@ def test_save_or_update_iep_file_update_existing(
     sample_iep_version_1st: IEPVersion
 ):
     """기존 파일 업데이트 테스트 (덮어쓰기)"""
+    import time
+    
     # Given - 첫 번째 저장
     content_v1 = {"annual_reading_goal": "목표 v1"}
     file_v1 = save_or_update_iep_file(
@@ -146,6 +148,9 @@ def test_save_or_update_iep_file_update_existing(
     test_db.commit()
     original_file_id = file_v1.id
     original_file_path = file_v1.file_path
+    
+    # 타임스탬프 차이를 만들기 위해 1초 대기
+    time.sleep(1)
     
     # When - 같은 iep_version_id + file_type으로 두 번째 저장
     content_v2 = {"annual_reading_goal": "목표 v2 (업데이트)"}
