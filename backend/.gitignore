@@ -31,5 +31,8 @@ htmlcov/
 *.db
 *.sqlite3
 
+# Test files
+*.docx
+
 # macOS
 .DS_Store

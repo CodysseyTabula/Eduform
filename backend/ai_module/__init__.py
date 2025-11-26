@@ -14,3 +14,4 @@ from .generators import generate_goals, generate_weekly_plan, generate_weekly_ma
 
 __all__ = ["generate_goals", "generate_weekly_plan", "generate_weekly_materials"]
 
+
