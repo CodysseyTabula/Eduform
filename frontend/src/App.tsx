@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Students from './pages/Students'
 import IEPList from './pages/IEPList'
+import Syllabus from './pages/Syllabus'
 import './App.css'
 
 function App() {
@@ -9,7 +10,7 @@ function App() {
       <Route path="/" element={<Navigate to="/students" replace />} />
       <Route path="/students" element={<Students />} />
       <Route path="/students/:studentId/iep-versions" element={<IEPList />} />
-      {/* 나중에 추가될 다른 페이지들 */}
+      <Route path="/students/:studentId/iep-versions/:iepVersionId/syllabus" element={<Syllabus />} />
     </Routes>
   )
 }
