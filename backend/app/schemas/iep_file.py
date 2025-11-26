@@ -6,6 +6,15 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.student_profile import StudentProfile
+
+
+class IEPFileCreateRequest(BaseModel):
+    """IEP 파일 생성 요청 스키마"""
+    
+    iep_version_id: UUID = Field(..., description="IEP 버전 ID")
+    student_profile: StudentProfile = Field(..., description="학생 프로필 (20개 필드)")
+
 
 class IEPFileResponse(BaseModel):
     """IEP 파일 메타데이터 응답 스키마"""
