@@ -7,8 +7,10 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.models.iep_file import IEPFile
 from app.models.iep_version import IEPVersion
 from app.models.student import Student
+from app.schemas.iep_file import IEPFileResponse
 from app.schemas.iep_version import IEPVersionCreate, IEPVersionResponse
 from app.services.document_generator import (
     generate_docx_stream,
@@ -115,6 +117,44 @@ def get_latest_iep_version(
         )
     
     return latest_version
+
+
+@router.get("/iep-versions/{iep_version_id}/iep-files", response_model=list[IEPFileResponse])
+def list_iep_files(
+    iep_version_id: UUID,
+    db: Session = Depends(get_db),
+) -> list[IEPFileResponse]:
+    """
+    IEP 버전의 모든 파일 메타데이터 조회
+    
+    - **iep_version_id**: IEP 버전 ID (UUID)
+    
+    Returns:
+        list[IEPFileResponse]: IEP 파일 메타데이터 리스트
+    
+    Raises:
+        404: IEP 버전이 존재하지 않을 때
+    """
+    # IEP 버전 존재 확인
+    iep_version = db.query(IEPVersion).filter(
+        IEPVersion.id == iep_version_id
+    ).first()
+    
+    if not iep_version:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="IEP version not found"
+        )
+    
+    # IEP 파일 조회
+    iep_files = (
+        db.query(IEPFile)
+        .filter(IEPFile.iep_version_id == iep_version_id)
+        .order_by(IEPFile.updated_at.desc())
+        .all()
+    )
+    
+    return iep_files
 
 
 @router.get("/iep-versions/{iep_version_id}/docx")

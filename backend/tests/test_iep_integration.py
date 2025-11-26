@@ -25,12 +25,18 @@ def test_create_iep_files_with_ai_mock(
     - 3개의 JSON 파일이 디스크에 생성됨
     - 3개의 IEPFile 레코드가 DB에 저장됨
     """
-    request_data = {
-        "iep_version_id": str(sample_iep_version.id),
-        "student_profile": sample_student_profile
+    # student_profile을 JSON 파일로 변환
+    profile_json = json.dumps(sample_student_profile, ensure_ascii=False).encode('utf-8')
+    
+    # multipart/form-data 요청
+    files = {
+        "file": ("student_profile.json", profile_json, "application/json")
+    }
+    data = {
+        "iep_version_id": str(sample_iep_version.id)
     }
     
-    response = client.post("/iep-files", json=request_data)
+    response = client.post("/iep-files", files=files, data=data)
     
     # API 응답 확인
     assert response.status_code == 201
@@ -79,13 +85,16 @@ def test_iep_files_query(client, sample_iep_version, mock_ai_generators, sample_
     - IEP 파일 생성 후 조회 가능
     - 3개 파일 메타데이터 반환
     """
-    # 먼저 IEP 파일 생성
-    request_data = {
-        "iep_version_id": str(sample_iep_version.id),
-        "student_profile": sample_student_profile
+    # 먼저 IEP 파일 생성 (multipart/form-data)
+    profile_json = json.dumps(sample_student_profile, ensure_ascii=False).encode('utf-8')
+    files = {
+        "file": ("student_profile.json", profile_json, "application/json")
+    }
+    data = {
+        "iep_version_id": str(sample_iep_version.id)
     }
     
-    create_response = client.post("/iep-files", json=request_data)
+    create_response = client.post("/iep-files", files=files, data=data)
     assert create_response.status_code == 201
     
     # 파일 조회

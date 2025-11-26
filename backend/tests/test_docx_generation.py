@@ -4,6 +4,7 @@ DOCX 문서 생성 및 다운로드 테스트
 IEP 버전의 DOCX 파일 생성 및 다운로드 API 테스트
 """
 import io
+import json
 import pytest
 from docx import Document
 
@@ -24,13 +25,16 @@ def test_download_iep_docx(
     - Content-Type이 DOCX 형식
     - 다운로드된 파일이 유효한 DOCX
     """
-    # 1. IEP 파일 생성 (3개 JSON)
-    request_data = {
-        "iep_version_id": str(sample_iep_version.id),
-        "student_profile": sample_student_profile
+    # 1. IEP 파일 생성 (3개 JSON) - multipart/form-data
+    profile_json = json.dumps(sample_student_profile, ensure_ascii=False).encode('utf-8')
+    files = {
+        "file": ("student_profile.json", profile_json, "application/json")
+    }
+    data = {
+        "iep_version_id": str(sample_iep_version.id)
     }
     
-    create_response = client.post("/iep-files", json=request_data)
+    create_response = client.post("/iep-files", files=files, data=data)
     assert create_response.status_code == 201
     
     # 2. DOCX 다운로드
@@ -76,13 +80,16 @@ def test_docx_content_structure(
     - IEP 메타데이터가 포함됨
     - 목표/학습계획/자료 섹션이 포함됨
     """
-    # 1. IEP 파일 생성
-    request_data = {
-        "iep_version_id": str(sample_iep_version.id),
-        "student_profile": sample_student_profile
+    # 1. IEP 파일 생성 - multipart/form-data
+    profile_json = json.dumps(sample_student_profile, ensure_ascii=False).encode('utf-8')
+    files = {
+        "file": ("student_profile.json", profile_json, "application/json")
+    }
+    data = {
+        "iep_version_id": str(sample_iep_version.id)
     }
     
-    create_response = client.post("/iep-files", json=request_data)
+    create_response = client.post("/iep-files", files=files, data=data)
     assert create_response.status_code == 201
     
     # 2. DOCX 다운로드
