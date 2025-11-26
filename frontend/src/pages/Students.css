@@ -1,0 +1,355 @@
+.students-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--color-background);
+}
+
+.students-content {
+  padding: 2rem;
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.students-title {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 500; /* medium */
+  font-size: 28px;
+  color: var(--color-contentPrimary);
+  margin: 0 0 1.5rem 0;
+  padding: 0;
+}
+
+.students-loading,
+.students-error {
+  text-align: center;
+  padding: 2rem;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-size: 18px;
+  color: var(--color-contentSecondary);
+}
+
+.students-error {
+  color: var(--color-negative);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.retry-button {
+  padding: 0.5rem 1rem;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-size: 16px;
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.retry-button:hover {
+  background-color: var(--color-primary);
+}
+
+.students-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  align-items: start;
+  width: 100%;
+}
+
+/* 카드가 4개 미만일 때를 위한 반응형 */
+@media (max-width: 1440px) {
+  .students-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.75rem;
+  }
+}
+
+/* 학생 추가 버튼 */
+.add-student-button {
+  width: 100%;
+  min-height: 70px;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-primary);
+  border-radius: 12px;
+  padding: 0.875rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.add-student-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.12), 0 4px 6px rgba(0, 0, 0, 0.08);
+}
+
+.add-student-button:active {
+  transform: translateY(0);
+}
+
+.add-student-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.add-student-text {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 400; /* regular */
+  font-size: 18px;
+  color: var(--color-contentTertiay);
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+/* 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background-color: var(--color-background);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--color-tertiary);
+}
+
+.modal-title {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 500; /* medium */
+  font-size: 24px;
+  color: var(--color-contentPrimary);
+  margin: 0;
+  padding: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: var(--color-contentTertiay);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.modal-close:hover:not(:disabled) {
+  color: var(--color-contentPrimary);
+}
+
+.modal-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modal-form {
+  padding: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 500; /* medium */
+  font-size: 16px;
+  color: var(--color-contentPrimary);
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-size: 16px;
+  color: var(--color-contentPrimary);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-primary);
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-error {
+  color: var(--color-negative);
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-size: 14px;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: rgba(255, 140, 120, 0.1);
+  border-radius: 6px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.modal-button {
+  padding: 0.75rem 1.5rem;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-button.cancel {
+  background-color: var(--color-white);
+  color: var(--color-contentPrimary);
+  border: 1px solid var(--color-primary);
+}
+
+.modal-button.cancel:hover:not(:disabled) {
+  background-color: var(--color-tertiary);
+}
+
+.modal-button.submit {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+}
+
+.modal-button.submit:hover:not(:disabled) {
+  background-color: var(--color-primary);
+}
+
+.modal-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .students-content {
+    padding: 1.5rem;
+  }
+  
+  .students-title {
+    font-size: 24px;
+    margin-bottom: 1.25rem;
+  }
+  
+  .students-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+  }
+  
+  .add-student-button {
+    max-width: 100%;
+    min-height: 65px;
+    padding: 0.75rem;
+  }
+  
+  .add-student-icon {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .add-student-text {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .students-content {
+    padding: 1rem;
+  }
+  
+  .students-title {
+    font-size: 22px;
+    margin-bottom: 1rem;
+  }
+  
+  .students-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .add-student-button {
+    min-height: 60px;
+    padding: 0.75rem;
+  }
+  
+  .add-student-icon {
+    width: 22px;
+    height: 22px;
+  }
+  
+  .add-student-text {
+    font-size: 16px;
+  }
+  
+  .modal-content {
+    max-width: 100%;
+  }
+  
+  .modal-header,
+  .modal-form {
+    padding: 1.25rem;
+  }
+  
+  .modal-title {
+    font-size: 20px;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .modal-button {
+    width: 100%;
+  }
+}
+

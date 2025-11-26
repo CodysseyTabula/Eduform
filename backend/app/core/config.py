@@ -1,27 +1,25 @@
-from pydantic_settings import BaseSettings
 from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """애플리케이션 설정"""
     
     # Application
-    app_name: str = Field(default="IEP Planning Support API")
+    app_name: str = Field(default="IEP Planning Support Service")
     app_version: str = Field(default="1.0.0")
-    app_env: str = Field(default="local")
-    app_debug: bool = Field(default=True)
-    app_port: int = Field(default=8000)
+    app_debug: bool = Field(default=True, alias="APP_DEBUG")
     
     # Database
-    db_host: str = Field(default="localhost")
-    db_port: int = Field(default=5432)
-    db_user: str = Field(default="postgres")
-    db_password: str = Field(default="postgres")
-    db_name: str = Field(default="iep_db")
+    db_host: str = Field(default="localhost", alias="DB_HOST")
+    db_port: int = Field(default=5432, alias="DB_PORT")
+    db_user: str = Field(default="postgres", alias="DB_USER")
+    db_password: str = Field(default="postgres", alias="DB_PASSWORD")
+    db_name: str = Field(default="iep_db", alias="DB_NAME")
     database_url: str | None = None
     
     # Storage
-    storage_path: str = Field(default="./storage")
+    storage_path: str = Field(default="./storage", alias="STORAGE_PATH")
     
     @property
     def sqlalchemy_database_uri(self) -> str:
@@ -41,3 +39,4 @@ class Settings(BaseSettings):
 
 # 싱글톤 인스턴스
 settings = Settings()
+

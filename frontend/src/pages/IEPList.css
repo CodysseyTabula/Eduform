@@ -1,0 +1,393 @@
+.iep-list-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--color-background);
+}
+
+.iep-list-loading {
+  padding: 2rem;
+  text-align: center;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-size: 18px;
+  color: var(--color-contentSecondary);
+}
+
+.iep-list-layout {
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - 120px);
+}
+
+.iep-list-main {
+  flex: 1;
+  padding: 2rem;
+  overflow-x: auto;
+}
+
+.iep-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.button-save {
+  background-color: var(--color-primary) !important;
+}
+
+.iep-form {
+  max-width: 1200px;
+}
+
+.iep-section {
+  margin-bottom: 2rem;
+}
+
+.iep-section-title {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 500; /* medium */
+  font-size: 32px;
+  color: var(--color-contentPrimary);
+  margin: 0 0 1.5rem 0;
+  padding: 0;
+}
+
+.iep-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.iep-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.iep-field-full {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.iep-field-label {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 500; /* medium */
+  font-size: 32px;
+  color: var(--color-contentPrimary);
+}
+
+.iep-input {
+  width: 100%;
+  padding: 0;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-size: 16px;
+  color: var(--color-contentPrimary);
+  background-color: transparent;
+  border: none;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.iep-input[type="date"] {
+  position: relative;
+  min-width: 200px;
+  cursor: pointer;
+}
+
+/* 브라우저 기본 달력이 표시되도록 설정 */
+.iep-input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 1;
+  width: 20px;
+  height: 20px;
+  position: absolute;
+  right: 0;
+}
+
+/* Firefox에서 달력 표시 */
+.iep-input[type="date"] {
+  -moz-appearance: textfield;
+}
+
+.iep-input[type="date"]::-moz-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+/* input 필드 자체를 클릭해도 달력이 열리도록 */
+.iep-input[type="date"]:not(:disabled) {
+  cursor: pointer;
+}
+
+.iep-input[type="number"] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+.iep-input[type="number"]::-webkit-outer-spin-button,
+.iep-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none; /* Chrome, Safari, Edge */
+  margin: 0;
+}
+
+.iep-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background-color: transparent;
+}
+
+.iep-input::placeholder {
+  color: var(--color-contentTertiay);
+}
+
+.iep-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.iep-performance-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.iep-wisc-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.iep-subject-group {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: var(--color-tertiary);
+  border-radius: 12px;
+}
+
+.iep-button-right {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .iep-list-layout {
+    flex-direction: column;
+  }
+  
+  .iep-list-main {
+    padding: 1.5rem;
+  }
+  
+  .iep-section-title,
+  .iep-field-label {
+    font-size: 28px;
+  }
+  
+  .iep-info-grid,
+  .iep-wisc-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  
+  .iep-actions {
+    flex-direction: column;
+  }
+}
+
+/* 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background-color: var(--color-background);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--color-tertiary);
+}
+
+.modal-title {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 500; /* medium */
+  font-size: 24px;
+  color: var(--color-contentPrimary);
+  margin: 0;
+  padding: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: var(--color-contentTertiay);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.modal-close:hover:not(:disabled) {
+  color: var(--color-contentPrimary);
+}
+
+.modal-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modal-form {
+  padding: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 500; /* medium */
+  font-size: 16px;
+  color: var(--color-contentPrimary);
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-size: 16px;
+  color: var(--color-contentPrimary);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-primary);
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-error {
+  color: var(--color-negative);
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-size: 14px;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: rgba(255, 140, 120, 0.1);
+  border-radius: 6px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.modal-button {
+  padding: 0.75rem 1.5rem;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-button.cancel {
+  background-color: var(--color-white);
+  color: var(--color-contentPrimary);
+  border: 1px solid var(--color-primary);
+}
+
+.modal-button.cancel:hover:not(:disabled) {
+  background-color: var(--color-tertiary);
+}
+
+.modal-button.submit {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+}
+
+.modal-button.submit:hover:not(:disabled) {
+  background-color: var(--color-primary);
+}
+
+.modal-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .iep-list-main {
+    padding: 1rem;
+  }
+  
+  .iep-section-title,
+  .iep-field-label {
+    font-size: 24px;
+  }
+  
+  .iep-subject-group {
+    padding: 1rem;
+  }
+  
+  .modal-content {
+    max-width: 100%;
+  }
+  
+  .modal-header,
+  .modal-form {
+    padding: 1.25rem;
+  }
+  
+  .modal-title {
+    font-size: 20px;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .modal-button {
+    width: 100%;
+  }
+}
+

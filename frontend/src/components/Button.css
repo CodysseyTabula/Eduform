@@ -1,0 +1,89 @@
+.button {
+  width: 140px;
+  height: 42px;
+  background-color: var(--color-secondary);
+  border: 1px solid var(--color-primary);
+  border-radius: 12px;
+  padding: 0 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.12), 0 4px 6px rgba(0, 0, 0, 0.08);
+}
+
+.button:active {
+  transform: translateY(0);
+}
+
+.button-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.button-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-white);
+}
+
+.button-icon svg,
+.button-icon img {
+  width: 20px;
+  height: 20px;
+  color: var(--color-white);
+  fill: var(--color-white);
+}
+
+.button-arrow {
+  flex-shrink: 0;
+}
+
+.button-text {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 400; /* regular */
+  font-size: 18px;
+  color: var(--color-white);
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .button {
+    width: 100%;
+    max-width: 195px;
+    height: 55px;
+  }
+  
+  .button-text {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .button {
+    height: 50px;
+    padding: 0 1rem;
+  }
+  
+  .button-text {
+    font-size: 24px;
+  }
+  
+  .button-icon svg,
+  .button-icon img {
+    width: 18px;
+    height: 18px;
+  }
+}
+
