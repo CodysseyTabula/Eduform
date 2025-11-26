@@ -21,6 +21,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+# 테스트 환경 강제 설정 (PostgreSQL 연결 회피)
+os.environ.setdefault("APP_ENV", "test")
+os.environ.setdefault("TEST_DATABASE_URL", "sqlite:///:memory:")
+
 from app.core.config import settings
 from app.db.base import Base
 from app.db.session import get_db
@@ -218,8 +222,8 @@ def sample_student_profile():
         # 기본 정보 (4개)
         "name": "테스트학생",
         "birth": "2015-03-15",
-        "grade": "3",
-        "current_semester": "1학기",
+        "grade": 3,  # int 타입
+        "current_semester": 1,  # int 타입
         
         # IEP 기간 (2개)
         "start_date": "2024-03-01",
@@ -243,8 +247,7 @@ def sample_student_profile():
         "korean_performance_level": "학년 수준",
         "math_performance_level": "학년 수준 약간 미달",
         
-        # 도메인 선택 (2개)
-        "korean_domain": ["읽기"],
-        "math_domain": ["수와 연산"]
+        # 도메인 선택 (2개 - 영문 camelCase)
+        "korean_domain": ["reading"],  # 영문으로 변경
+        "math_domain": ["numbersOperations"]  # 영문으로 변경
     }
-
