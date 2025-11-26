@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,10 +11,21 @@ from app.db.session import engine
 # Import all models to register them with Base.metadata
 import app.models  # noqa
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """애플리케이션 생명주기 관리"""
+    # Startup
+    Base.metadata.create_all(bind=engine)
+    yield
+    # Shutdown (필요시 정리 작업)
+
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     debug=settings.app_debug,
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -22,12 +35,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    """애플리케이션 시작 이벤트"""
-    Base.metadata.create_all(bind=engine)
 
 
 # Include routers

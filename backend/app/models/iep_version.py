@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
@@ -27,7 +27,7 @@ class IEPVersion(Base):
     year: Mapped[str] = mapped_column(nullable=False)
     semester: Mapped[str] = mapped_column(nullable=False)
     grade: Mapped[str] = mapped_column(nullable=False)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     student: Mapped["Student"] = relationship(back_populates="iep_versions")

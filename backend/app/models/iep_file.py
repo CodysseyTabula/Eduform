@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
@@ -25,7 +25,10 @@ class IEPFile(Base):
     )
     file_type: Mapped[str] = mapped_column(nullable=False)  # "goals", "weekly_plan", "weekly_materials"
     file_path: Mapped[str] = mapped_column(nullable=False)  # 디스크 경로
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
 
     # Relationship
     iep_version: Mapped["IEPVersion"] = relationship(back_populates="iep_files")
