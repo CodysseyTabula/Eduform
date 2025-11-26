@@ -1,13 +1,20 @@
 .text-box {
   width: 100%;
-  max-width: 420px;
   min-height: 70px;
+  height: auto;
   background-color: var(--color-white);
   border: 1px solid var(--color-primary);
   border-radius: 12px;
   padding: 1rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+/* 내부 textarea나 input의 resize 제거 */
+.text-box textarea,
+.text-box input {
+  resize: none;
 }
 
 .text-box:hover {
@@ -21,7 +28,6 @@
 
 @media (max-width: 768px) {
   .text-box {
-    max-width: 100%;
     min-height: 80px;
     padding: 1rem;
   }
