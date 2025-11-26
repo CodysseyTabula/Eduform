@@ -1,42 +1,60 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
+.app {
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--color-background);
+}
+
+.app-layout {
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - 120px);
+}
+
+.app-main {
+  flex: 1;
   padding: 2rem;
-  text-align: center;
+  overflow-x: auto;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.component-section {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.component-section h2 {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 700;
+  font-size: 48px;
+  color: var(--color-contentPrimary);
+  margin-bottom: 2rem;
+}
+
+.component-group {
+  margin-bottom: 3rem;
+}
+
+.component-group h3 {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-weight: 500;
+  font-size: 32px;
+  color: var(--color-contentPrimary);
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
   }
-  to {
-    transform: rotate(360deg);
+  
+  .app-main {
+    padding: 1.5rem;
   }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+  
+  .component-section h2 {
+    font-size: 36px;
   }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
+  
+  .component-group h3 {
+    font-size: 28px;
+  }
 }

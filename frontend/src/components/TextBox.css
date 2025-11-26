@@ -1,0 +1,36 @@
+.text-box {
+  width: 100%;
+  max-width: 420px;
+  min-height: 70px;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-primary);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.text-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.12), 0 4px 6px rgba(0, 0, 0, 0.08);
+}
+
+.text-box:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .text-box {
+    max-width: 100%;
+    min-height: 80px;
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .text-box {
+    min-height: 70px;
+    padding: 0.875rem;
+  }
+}
+

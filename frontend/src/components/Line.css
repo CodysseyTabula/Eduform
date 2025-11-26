@@ -1,0 +1,9 @@
+.line {
+  width: 100%;
+  height: 5px;
+  background-color: var(--color-secondary);
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
