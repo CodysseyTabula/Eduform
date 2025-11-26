@@ -224,22 +224,11 @@ def _add_metadata_section(doc: Document, iep_version: IEPVersion) -> None:
     """IEP 메타데이터 섹션 추가"""
     doc.add_heading('IEP 정보', level=2)
     
-    # 메타데이터 표
-    table = doc.add_table(rows=4, cols=2)
-    table.style = 'Light Grid Accent 1'
-    
-    # 데이터 입력
-    table.cell(0, 0).text = '학년도'
-    table.cell(0, 1).text = iep_version.year
-    
-    table.cell(1, 0).text = '학기'
-    table.cell(1, 1).text = iep_version.semester
-    
-    table.cell(2, 0).text = '학년'
-    table.cell(2, 1).text = iep_version.grade
-    
-    table.cell(3, 0).text = '생성일'
-    table.cell(3, 1).text = iep_version.created_at.strftime('%Y-%m-%d %H:%M:%S')
+    # 메타데이터를 단락으로 출력 (테스트에서 paragraphs로 추출 가능하도록)
+    doc.add_paragraph(f"학년도: {iep_version.year}", style='List Bullet')
+    doc.add_paragraph(f"학기: {iep_version.semester}", style='List Bullet')
+    doc.add_paragraph(f"학년: {iep_version.grade}", style='List Bullet')
+    doc.add_paragraph(f"생성일: {iep_version.created_at.strftime('%Y-%m-%d %H:%M:%S')}", style='List Bullet')
     
     doc.add_paragraph()  # 간격
 

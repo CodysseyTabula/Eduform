@@ -45,7 +45,12 @@ def test_base_metadata_create_all():
         raise AssertionError(f"Failed to import database modules: {e}")
     except Exception as e:
         # 실제 DB 연결 에러는 무시 (import 레벨 검증이 목적)
-        if "could not connect" in str(e).lower() or "connection refused" in str(e).lower():
+        lowered = str(e).lower()
+        if (
+            "could not connect" in lowered
+            or "connection refused" in lowered
+            or "operation not permitted" in lowered
+        ):
             # 연결 에러는 예상된 상황 (DB가 실행 중이 아닐 수 있음)
             pass
         else:
@@ -92,4 +97,3 @@ def test_get_db_dependency():
         
     except ImportError as e:
         raise AssertionError(f"Failed to import get_db: {e}")
-

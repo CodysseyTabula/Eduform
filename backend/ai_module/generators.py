@@ -64,22 +64,30 @@ def generate_goals(student_profile: dict[str, Any]) -> dict:
     
     # 국어 도메인별 목표
     for domain in korean_domains:
-        domain_key = _get_domain_key(domain)
+        # AI에게 전달/표시할 때는 한글 도메인명 사용
+        korean_domain_name = _get_domain_key(domain)
+        # JSON 키는 영문 camelCase 유지 (프론트엔드와 호환)
+        domain_key = _normalize_domain_key(domain)
+        
         goals[domain_key] = {
-            "annual_goal": f"[연간 목표 - 국어/{domain}] {student_name} 학생의 {domain} 능력 향상 (Mock)",
+            "annual_goal": f"[연간 목표 - 국어/{korean_domain_name}] {student_name} 학생의 {korean_domain_name} 능력 향상 (Mock)",
             "semester_goal": (
-                f"[학기 목표 - 국어/{domain}] {grade}학년 {domain} 핵심 개념 습득 "
+                f"[학기 목표 - 국어/{korean_domain_name}] {grade}학년 {korean_domain_name} 핵심 개념 습득 "
                 f"({start_date} ~ {end_date}) (Mock)"
             ),
         }
     
     # 수학 도메인별 목표
     for domain in math_domains:
-        domain_key = _get_domain_key(domain)
+        # AI에게 전달/표시할 때는 한글 도메인명 사용
+        korean_domain_name = _get_domain_key(domain)
+        # JSON 키는 영문 camelCase 유지 (프론트엔드와 호환)
+        domain_key = _normalize_domain_key(domain)
+        
         goals[domain_key] = {
-            "annual_goal": f"[연간 목표 - 수학/{domain}] {student_name} 학생의 {domain} 능력 향상 (Mock)",
+            "annual_goal": f"[연간 목표 - 수학/{korean_domain_name}] {student_name} 학생의 {korean_domain_name} 능력 향상 (Mock)",
             "semester_goal": (
-                f"[학기 목표 - 수학/{domain}] {grade}학년 {domain} 핵심 개념 습득 "
+                f"[학기 목표 - 수학/{korean_domain_name}] {grade}학년 {korean_domain_name} 핵심 개념 습득 "
                 f"({start_date} ~ {end_date}) (Mock)"
             ),
         }
@@ -110,9 +118,13 @@ def generate_weekly_plan(student_profile: dict[str, Any]) -> dict:
     
     all_domains = korean_domains + math_domains
     for domain in all_domains:
-        domain_key = _get_domain_key(domain)
+        # AI에게 전달/표시할 때는 한글 도메인명 사용
+        korean_domain_name = _get_domain_key(domain)
+        # JSON 키는 영문 camelCase 유지
+        domain_key = _normalize_domain_key(domain)
+        
         weekly_plan[domain_key] = [
-            {"week": week, "content": f"[{domain}] {week}주차 학습 내용 (Mock)"}
+            {"week": week, "content": f"[{korean_domain_name}] {week}주차 학습 내용 (Mock)"}
             for week in range(1, 21)
         ]
     
@@ -142,12 +154,16 @@ def generate_weekly_materials(student_profile: dict[str, Any]) -> dict:
     
     all_domains = korean_domains + math_domains
     for domain in all_domains:
-        domain_key = _get_domain_key(domain)
+        # AI에게 전달/표시할 때는 한글 도메인명 사용
+        korean_domain_name = _get_domain_key(domain)
+        # JSON 키는 영문 camelCase 유지
+        domain_key = _normalize_domain_key(domain)
+        
         weekly_materials[domain_key] = [
             {
                 "week": week,
                 "material_url": (
-                    f"https://example.com/edunet/{domain_key}/week{week}/material1.pdf"
+                    f"https://example.com/edunet/{korean_domain_name}/week{week}/material1.pdf"
                 ),
             }
             for week in range(1, 21)
@@ -158,16 +174,52 @@ def generate_weekly_materials(student_profile: dict[str, Any]) -> dict:
 
 def _get_domain_key(domain: str) -> str:
     """
-    도메인 이름을 키로 변환
+    도메인 이름을 한글로 변환 (AI 함수에 전달용)
     
     Args:
-        domain: 도메인 이름 (한글 또는 영문)
+        domain: 도메인 이름 (한글 또는 영문 camelCase)
     
     Returns:
-        str: 도메인 키 (camelCase)
+        str: 도메인 한글 이름
+    
+    Note:
+        - AI 모듈은 한글 도메인명을 기대합니다
+        - 영문/한글 모두 입력 가능하며, 항상 한글로 반환합니다
+    """
+    # 영문 → 한글 매핑
+    english_to_korean = {
+        "listeningSpeaking": "듣기말하기",
+        "reading": "읽기",
+        "writing": "쓰기",
+        "grammar": "문법",
+        "literature": "문학",
+        "mediaLiteracy": "매체",
+        "numbersOperations": "수와 연산",
+        "changeAndRelations": "변화와 관계",
+        "geometryMeasurement": "도형과 측정",
+        "dataAndProbability": "자료와 가능성",
+    }
+    
+    # 영문인 경우 한글로 변환, 이미 한글인 경우 그대로 반환
+    return english_to_korean.get(domain, domain)
+
+
+def _normalize_domain_key(domain: str) -> str:
+    """
+    도메인 이름을 영문 camelCase로 정규화 (JSON 키로 사용)
+    
+    Args:
+        domain: 도메인 이름 (한글 또는 영문 camelCase)
+    
+    Returns:
+        str: 영문 camelCase 키
+    
+    Note:
+        - JSON 반환 시 키는 영문 camelCase를 사용합니다
+        - 프론트엔드 및 document generator와 호환됩니다
     """
     # 한글 → 영문 매핑
-    domain_mapping = {
+    korean_to_english = {
         "듣기말하기": "listeningSpeaking",
         "읽기": "reading",
         "쓰기": "writing",
@@ -180,8 +232,8 @@ def _get_domain_key(domain: str) -> str:
         "자료와 가능성": "dataAndProbability",
     }
     
-    # 이미 영문 키인 경우 그대로 반환
-    return domain_mapping.get(domain, domain)
+    # 한글인 경우 영문으로 변환, 이미 영문인 경우 그대로 반환
+    return korean_to_english.get(domain, domain)
 
 
 __all__ = ["generate_goals", "generate_weekly_plan", "generate_weekly_materials"]
