@@ -29,7 +29,7 @@ def test_create_iep_file_by_type(
     profile_json = json.dumps(sample_student_profile, ensure_ascii=False).encode('utf-8')
     
     # file_type별로 각각 호출
-    file_types = ["goals", "weekly_plan", "weekly_materials"]
+    file_types = ["goal", "weekly_plan", "material"]
     created_files = []
     
     for file_type in file_types:
@@ -58,7 +58,7 @@ def test_create_iep_file_by_type(
     
     # 반환된 파일 타입 확인
     file_types_set = {item["file_type"] for item in created_files}
-    assert file_types_set == {"goals", "weekly_plan", "weekly_materials"}
+    assert file_types_set == {"goal", "weekly_plan", "material"}
     
     # 디스크 파일 확인
     iep_version_dir = tmp_storage_path / "iep" / str(sample_iep_version.id)
@@ -79,11 +79,11 @@ def test_create_iep_file_by_type(
             assert isinstance(content, dict)
             
         # 파일 타입별 내용 검증
-        if item["file_type"] == "goals":
+        if item["file_type"] == "goal":
             assert "reading" in content or "numbersOperations" in content
         elif item["file_type"] == "weekly_plan":
             assert "reading" in content or "numbersOperations" in content
-        elif item["file_type"] == "weekly_materials":
+        elif item["file_type"] == "material":
             assert "reading" in content or "numbersOperations" in content
 
 
@@ -98,7 +98,7 @@ def test_iep_files_query(client, sample_iep_version, mock_ai_generators, sample_
     """
     # 먼저 IEP 파일 생성 (multipart/form-data)
     profile_json = json.dumps(sample_student_profile, ensure_ascii=False).encode('utf-8')
-    file_types = ["goals", "weekly_plan", "weekly_materials"]
+    file_types = ["goal", "weekly_plan", "material"]
     
     for file_type in file_types:
         files = {
@@ -129,7 +129,7 @@ def test_iep_files_query(client, sample_iep_version, mock_ai_generators, sample_
         assert "id" in item
         assert "file_type" in item
         assert "file_path" in item
-        assert item["file_type"] in ["goals", "weekly_plan", "weekly_materials"]
+        assert item["file_type"] in ["goal", "weekly_plan", "material"]
 
 
 @pytest.mark.integration
@@ -161,7 +161,7 @@ def test_mock_ai_data_structure(mock_ai_generators):
     assert len(weekly_plan["reading"]) == 20
     
     # weekly_materials 구조 확인
-    weekly_materials = mock_data["weekly_materials"]
+    weekly_materials = mock_data["material"]
     assert isinstance(weekly_materials, dict)
     assert "reading" in weekly_materials
     assert isinstance(weekly_materials["reading"], list)

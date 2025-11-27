@@ -12,7 +12,7 @@ from docx import Document
 def _create_all_iep_files(client, iep_version_id, student_profile):
     """DOCX 생성 전에 3개 file_type 모두 준비"""
     profile_json = json.dumps(student_profile, ensure_ascii=False).encode('utf-8')
-    for file_type in ["goals", "weekly_plan", "weekly_materials"]:
+    for file_type in ["goal", "weekly_plan", "material"]:
         files = {
             "file": ("student_profile.json", profile_json, "application/json")
         }

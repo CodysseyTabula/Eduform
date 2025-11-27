@@ -27,7 +27,7 @@ def save_json_file(iep_version_id: str, file_type: str, content: dict) -> str:
     
     Args:
         iep_version_id: IEP 버전 ID (UUID)
-        file_type: 파일 타입 ("goals", "weekly_plan", "weekly_materials")
+        file_type: 파일 타입 ("goal", "weekly_plan", "material")
         content: JSON 컨텐츠 (dict)
     
     Returns:

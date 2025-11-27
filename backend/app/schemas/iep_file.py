@@ -21,7 +21,7 @@ class IEPFileResponse(BaseModel):
     
     id: UUID
     iep_version_id: UUID
-    file_type: Literal["goals", "weekly_plan", "weekly_materials"]
+    file_type: Literal["goal", "weekly_plan", "material"]
     file_path: str
     updated_at: datetime
     

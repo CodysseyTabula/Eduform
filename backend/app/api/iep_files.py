@@ -24,7 +24,7 @@ router = APIRouter(prefix="/iep-files", tags=["IEP Files"])
 @router.post("", response_model=IEPFileResponse, status_code=status.HTTP_201_CREATED)
 async def create_iep_file(
     iep_version_id: str = Form(..., description="IEP 버전 ID (UUID)"),
-    file_type: str = Form(..., description="파일 타입 (goals, weekly_plan, weekly_materials)"),
+    file_type: str = Form(..., description="파일 타입 (goal, weekly_plan, material)"),
     file: UploadFile = File(..., description="학생 프로필 JSON 파일 (20개 필드)"),
     db: Session = Depends(get_db),
 ) -> IEPFileResponse:
@@ -32,21 +32,21 @@ async def create_iep_file(
     IEP 파일 생성 (AI 모듈 사용)
     
     사용자가 file_type을 선택하여 해당 타입의 IEP 파일 1개를 생성합니다.
-    3개 파일(goals, weekly_plan, weekly_materials)을 모두 만들려면 이 API를 3번 호출해야 합니다.
+    3개 파일(goal, weekly_plan, material)을 모두 만들려면 이 API를 3번 호출해야 합니다.
     
     **프로세스:**
     1. multipart/form-data로 student_profile JSON 파일 수신
     2. IEP Version 존재 여부 검증
     3. file_type에 따라 해당 AI 함수 호출
-       - "goals" → generate_goals()
+       - "goal" → generate_goals()
        - "weekly_plan" → generate_weekly_plan()
-       - "weekly_materials" → generate_weekly_materials()
+       - "material" → generate_weekly_materials()
     4. 생성된 JSON을 디스크에 저장
     5. IEP_FILE 레코드 DB에 저장
     
     **요청 (multipart/form-data):**
     - **iep_version_id**: IEP 버전 ID (UUID)
-    - **file_type**: "goals", "weekly_plan", "weekly_materials" 중 하나 선택
+    - **file_type**: "goal", "weekly_plan", "material" 중 하나 선택
     - **file**: 학생 프로필 JSON 파일 (20개 필드)
     
     **응답:**
@@ -67,7 +67,7 @@ async def create_iep_file(
         )
     
     # 2. file_type 검증
-    valid_file_types = ["goals", "weekly_plan", "weekly_materials"]
+    valid_file_types = ["goal", "weekly_plan", "material"]
     if file_type not in valid_file_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -114,11 +114,11 @@ async def create_iep_file(
     try:
         from ai_module import generate_goals, generate_weekly_plan, generate_weekly_materials
         
-        if file_type == "goals":
+        if file_type == "goal":
             generated_data = generate_goals(profile_dict)
         elif file_type == "weekly_plan":
             generated_data = generate_weekly_plan(profile_dict)
-        elif file_type == "weekly_materials":
+        elif file_type == "material":
             generated_data = generate_weekly_materials(profile_dict)
         
     except Exception as e:
@@ -245,5 +245,3 @@ async def update_iep_file(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update database: {str(e)}"
         )
-
-
