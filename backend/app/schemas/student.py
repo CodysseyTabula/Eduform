@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class StudentCreate(BaseModel):
     """학생 생성 요청 스키마"""
     
-    name: str = Field(..., min_length=1, max_length=100, description="학생 이름")
+    name: str = Field(..., max_length=100, description="학생 이름")
     birth: date = Field(..., description="생년월일 (YYYY-MM-DD)")
 
 

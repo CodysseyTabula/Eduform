@@ -15,7 +15,7 @@ class StudentProfile(BaseModel):
     AI 모듈에 전달되는 학생 정보를 정의합니다.
     """
     # 기본 정보
-    name: str = Field(..., min_length=1, max_length=100, description="학생 이름")
+    name: str = Field(..., max_length=100, description="학생 이름")
     birth: str = Field(..., description="생년월일 (YYYY-MM-DD)")
     grade: int = Field(..., ge=1, le=12, description="학년 (1-12)")
     current_semester: int = Field(..., ge=1, le=2, description="현재 학기 (1 or 2)")
@@ -25,10 +25,10 @@ class StudentProfile(BaseModel):
     end_date: str = Field(..., description="학기 종료일 (YYYY-MM-DD)")
     
     # 수준 평가
-    guardian_opinion: str = Field(..., description="보호자 의견")
-    cognitive_level: str = Field(..., description="인지 수준")
-    social_psych_level: str = Field(..., description="사회심리 수준")
-    motor_daily_level: str = Field(..., description="운동 일상생활 수준")
+    guardian_opinion: str = Field(..., min_length=0, description="보호자 의견")
+    cognitive_level: str = Field(..., min_length=0, description="인지 수준")
+    social_psych_level: str = Field(..., min_length=0, description="사회심리 수준")
+    motor_daily_level: str = Field(..., min_length=0, description="운동 일상생활 수준")
     
     # K-WISC-V 검사 결과 (6개 지표)
     vci_score: int = Field(..., ge=0, le=200, description="언어이해지표 (VCI)")
@@ -39,8 +39,8 @@ class StudentProfile(BaseModel):
     fsiq_score: int = Field(..., ge=0, le=200, description="전체 IQ (FSIQ)")
     
     # 교과 수행 수준
-    korean_performance_level: str = Field(..., description="국어 수행 수준")
-    math_performance_level: str = Field(..., description="수학 수행 수준")
+    korean_performance_level: str = Field(..., min_length=0, description="국어 수행 수준")
+    math_performance_level: str = Field(..., min_length=0, description="수학 수행 수준")
     
     # 도메인 선택 (영문 camelCase 형식)
     korean_domain: List[str] = Field(
