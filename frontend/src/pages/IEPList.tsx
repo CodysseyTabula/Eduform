@@ -62,6 +62,9 @@ const IEPList: React.FC = () => {
   const [saveResult, setSaveResult] = useState<'success' | 'error' | null>(null);
   const [saveErrorMessage, setSaveErrorMessage] = useState('');
   
+  // 저장 완료 상태 (저장하기 버튼을 눌러서 저장이 완료된 경우에만 true)
+  const [isSaved, setIsSaved] = useState(false);
+  
   // 폼 데이터
   const [formData, setFormData] = useState<IEPFormData>({
     name: '',
@@ -152,6 +155,7 @@ const IEPList: React.FC = () => {
       
       if (jsonFile) {
         setCurrentIepFileId(jsonFile.id);
+        setIsSaved(true); // 기존 파일이 있으면 저장된 상태로 간주
         
         // JSON 파일 내용 로드
         try {
@@ -228,6 +232,7 @@ const IEPList: React.FC = () => {
         }
       } else {
         setCurrentIepFileId(null);
+        setIsSaved(false); // 파일이 없으면 저장되지 않은 상태
         // 파일이 없으면 빈 템플릿으로 초기화
         setFormData(prev => ({
           ...prev,
@@ -308,6 +313,7 @@ const IEPList: React.FC = () => {
       // 새로 생성된 IEP로 이동
       setCurrentIepId(newIEP.id);
       setCurrentIepFileId(null);
+      setIsSaved(false); // 새 IEP는 아직 저장되지 않음
       setIsEditing(true);
       setIsModalOpen(false);
       
@@ -346,6 +352,7 @@ const IEPList: React.FC = () => {
 
   const handleEdit = () => {
     setIsEditing(true);
+    setIsSaved(false); // 편집 모드로 들어가면 저장 상태 초기화
   };
 
   const handleSave = async () => {
@@ -442,6 +449,7 @@ const IEPList: React.FC = () => {
       }
       
       setIsEditing(false);
+      setIsSaved(true); // 저장 성공 시 저장 완료 상태로 설정
       
       // 저장 성공 모달 표시
       setSaveResult('success');
@@ -554,8 +562,8 @@ const IEPList: React.FC = () => {
 
   // 교육계획 버튼 활성화 조건 체크
   const canNavigateToSyllabus = (subject: string): boolean => {
-    // 1. 저장이 완료되어야 함 (currentIepFileId가 있어야 함)
-    if (!currentIepFileId) {
+    // 1. 저장하기 버튼을 눌러서 저장이 완료되어야 함
+    if (!isSaved || !currentIepFileId) {
       return false;
     }
 
