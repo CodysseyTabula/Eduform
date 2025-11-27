@@ -155,7 +155,15 @@ async def create_iep_file(
         db.commit()
         db.refresh(iep_file)
         
-        return iep_file
+        # file_content 포함 응답
+        return IEPFileResponse(
+            id=iep_file.id,
+            iep_version_id=iep_file.iep_version_id,
+            file_type=iep_file.file_type,
+            file_path=iep_file.file_path,
+            file_content=generated_data,
+            updated_at=iep_file.updated_at,
+        )
     
     except Exception as e:
         db.rollback()
@@ -240,7 +248,15 @@ async def update_iep_file(
         db.commit()
         db.refresh(iep_file)
         
-        return iep_file
+        # file_content 포함 응답
+        return IEPFileResponse(
+            id=iep_file.id,
+            iep_version_id=iep_file.iep_version_id,
+            file_type=iep_file.file_type,
+            file_path=iep_file.file_path,
+            file_content=json_data,
+            updated_at=iep_file.updated_at,
+        )
     
     except Exception as e:
         db.rollback()
