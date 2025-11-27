@@ -139,7 +139,7 @@ const IEPList: React.FC = () => {
     try {
       // IEP 파일 목록 조회
       const files = await getIEPFiles(iepId);
-      const jsonFile = files.find(f => f.file_type === 'json');
+      const jsonFile = files.find(f => f.file_type === 'student_info');
       
       if (jsonFile) {
         setCurrentIepFileId(jsonFile.id);
@@ -149,18 +149,44 @@ const IEPList: React.FC = () => {
           const jsonData = await getIEPFileContent(jsonFile.file_path);
           if (jsonData) {
             // JSON 데이터를 formData에 채우기
+            // 도메인 키를 한글로 변환
+            const keyToDomain: Record<string, string> = {
+              'listeningSpeaking': '듣기⋅말하기',
+              'reading': '읽기',
+              'writing': '쓰기',
+              'grammar': '문법',
+              'literature': '문학',
+              'mediaLiteracy': '매체',
+              'numbersOperations': '수와 연산',
+              'changeAndRelations': '변화와 관계',
+              'geometryMeasurement': '도형과 측정',
+              'dataAndProbability': '자료와 가능성',
+            };
+            
+            // korean_domain과 math_domain이 배열인지 문자열인지 확인
+            const koreanDomainArray = Array.isArray(jsonData.korean_domain) 
+              ? jsonData.korean_domain 
+              : (jsonData.korean_domain ? jsonData.korean_domain.split(', ').filter(Boolean) : []);
+            const mathDomainArray = Array.isArray(jsonData.math_domain)
+              ? jsonData.math_domain
+              : (jsonData.math_domain ? jsonData.math_domain.split(', ').filter(Boolean) : []);
+            
+            // 영문 키를 한글로 변환
+            const koreanDomainsList = koreanDomainArray.map(key => keyToDomain[key] || key).filter(Boolean);
+            const mathDomainsList = mathDomainArray.map(key => keyToDomain[key] || key).filter(Boolean);
+            
             setFormData(prev => ({
               ...prev,
               name: jsonData.name || prev.name,
               birth: jsonData.birth || prev.birth,
-              grade: jsonData.grade || '',
-              current_semester: jsonData.current_semester || '',
-              iep_start_date: jsonData.iep_start_date || '',
-              iep_end_date: jsonData.iep_end_date || '',
+              grade: String(jsonData.grade || ''),
+              current_semester: jsonData.current_semester ? `${jsonData.current_semester}학기` : '',
+              iep_start_date: jsonData.start_date || '',
+              iep_end_date: jsonData.end_date || '',
               guardian_opinion: jsonData.guardian_opinion || '',
-              cognitive_level: jsonData.cognitive_level || '',
-              social_psych_level: jsonData.social_psych_level || '',
-              motor_daily_level: jsonData.motor_daily_level || '',
+              cognitive_level: String(jsonData.cognitive_level || ''),
+              social_psych_level: String(jsonData.social_psych_level || ''),
+              motor_daily_level: String(jsonData.motor_daily_level || ''),
               vci_score: jsonData.vci_score || 0,
               visual_spatial_score: jsonData.visual_spatial_score || 0,
               fri_score: jsonData.fri_score || 0,
@@ -169,26 +195,22 @@ const IEPList: React.FC = () => {
               fsiq_score: jsonData.fsiq_score || 0,
               korean_performance_level: jsonData.korean_performance_level || '',
               math_performance_level: jsonData.math_performance_level || '',
-              korean_domain: jsonData.korean_domain || '',
-              math_domain: jsonData.math_domain || '',
+              korean_domain: koreanDomainsList.join(', '),
+              math_domain: mathDomainsList.join(', '),
             }));
             
             // 교과목 및 학습 영역 복원
-            if (jsonData.korean_domain) {
+            if (koreanDomainsList.length > 0) {
               setSubject1('국어');
-              const koreanDomainsList = jsonData.korean_domain.split(', ').filter(Boolean);
               setKoreanDomains(koreanDomainsList);
-            } else if (jsonData.math_domain) {
-              // 첫 번째 교과목이 수학인 경우
-              if (!jsonData.korean_domain) {
-                setSubject1('수학');
-                const mathDomainsList = jsonData.math_domain.split(', ').filter(Boolean);
-                setMathDomains(mathDomainsList);
-              } else {
+            }
+            if (mathDomainsList.length > 0) {
+              if (koreanDomainsList.length > 0) {
                 setSubject2('수학');
-                const mathDomainsList = jsonData.math_domain.split(', ').filter(Boolean);
-                setMathDomains(mathDomainsList);
+              } else {
+                setSubject1('수학');
               }
+              setMathDomains(mathDomainsList);
             }
           }
         } catch (err) {
@@ -205,9 +227,9 @@ const IEPList: React.FC = () => {
           iep_start_date: '',
           iep_end_date: '',
           guardian_opinion: '',
-          cognitive_level: '',
-          social_psych_level: '',
-          motor_daily_level: '',
+          cognitive_level: '0',
+          social_psych_level: '0',
+          motor_daily_level: '0',
           vci_score: 0,
           visual_spatial_score: 0,
           fri_score: 0,
@@ -317,18 +339,35 @@ const IEPList: React.FC = () => {
     if (!currentIepId) return;
     
     try {
-      // JSON 데이터 생성
+      // JSON 데이터 생성 (백엔드 스키마에 맞게)
+      // 도메인을 영문 camelCase로 변환
+      const domainToKey: Record<string, string> = {
+        '듣기⋅말하기': 'listeningSpeaking',
+        '읽기': 'reading',
+        '쓰기': 'writing',
+        '문법': 'grammar',
+        '문학': 'literature',
+        '매체': 'mediaLiteracy',
+        '수와 연산': 'numbersOperations',
+        '변화와 관계': 'changeAndRelations',
+        '도형과 측정': 'geometryMeasurement',
+        '자료와 가능성': 'dataAndProbability',
+      };
+      
+      const koreanDomainKeys = koreanDomains.map(d => domainToKey[d] || d).filter(Boolean);
+      const mathDomainKeys = mathDomains.map(d => domainToKey[d] || d).filter(Boolean);
+      
       const jsonData = {
         name: formData.name,
         birth: formData.birth,
-        grade: formData.grade,
-        current_semester: formData.current_semester,
-        iep_start_date: formData.iep_start_date,
-        iep_end_date: formData.iep_end_date,
+        grade: Number(formData.grade) || 1, // int
+        current_semester: Number(formData.current_semester.replace('학기', '').trim()) || 1, // int (1 or 2)
+        start_date: formData.iep_start_date || '', // 학기 시작일
+        end_date: formData.iep_end_date || '', // 학기 종료일
         guardian_opinion: formData.guardian_opinion,
-        cognitive_level: formData.cognitive_level,
-        social_psych_level: formData.social_psych_level,
-        motor_daily_level: formData.motor_daily_level,
+        cognitive_level: formData.cognitive_level, // string
+        social_psych_level: formData.social_psych_level, // string
+        motor_daily_level: formData.motor_daily_level, // string
         vci_score: formData.vci_score,
         visual_spatial_score: formData.visual_spatial_score,
         fri_score: formData.fri_score,
@@ -337,8 +376,8 @@ const IEPList: React.FC = () => {
         fsiq_score: formData.fsiq_score,
         korean_performance_level: formData.korean_performance_level,
         math_performance_level: formData.math_performance_level,
-        korean_domain: koreanDomains.join(', '),
-        math_domain: mathDomains.join(', '),
+        korean_domain: koreanDomainKeys, // List[str]
+        math_domain: mathDomainKeys, // List[str]
       };
       
       // JSON을 File 객체로 변환
@@ -352,7 +391,7 @@ const IEPList: React.FC = () => {
         // 새 파일 생성
         const fileResponse = await createIEPFile({
           iep_version_id: currentIepId,
-          file_type: 'json',
+          file_type: 'student_info',
           file: jsonFile,
         });
         setCurrentIepFileId(fileResponse.id);
