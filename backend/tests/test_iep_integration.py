@@ -1,7 +1,7 @@
 """
 IEP 파일 생성 통합 테스트 (AI 모듈 모킹 포함)
 
-IEP 파일 생성 API가 AI 모듈을 호출하고 3개의 파일을 생성하는지 검증
+IEP 파일 생성 API가 AI 모듈을 호출하고 4개의 파일을 생성하는지 검증
 """
 import json
 import pytest
@@ -29,7 +29,7 @@ def test_create_iep_file_by_type(
     profile_json = json.dumps(sample_student_profile, ensure_ascii=False).encode('utf-8')
     
     # file_type별로 각각 호출
-    file_types = ["goal", "weekly_plan", "material"]
+    file_types = ["student_info", "goal", "weekly_content", "weekly_material"]
     created_files = []
     
     for file_type in file_types:
@@ -53,20 +53,20 @@ def test_create_iep_file_by_type(
         
         created_files.append(file_data)
     
-    # 3개 파일 모두 생성 확인
-    assert len(created_files) == 3
+    # 4개 파일 모두 생성 확인
+    assert len(created_files) == 4
     
     # 반환된 파일 타입 확인
     file_types_set = {item["file_type"] for item in created_files}
-    assert file_types_set == {"goal", "weekly_plan", "material"}
+    assert file_types_set == {"student_info", "goal", "weekly_content", "weekly_material"}
     
     # 디스크 파일 확인
     iep_version_dir = tmp_storage_path / "iep" / str(sample_iep_version.id)
     assert iep_version_dir.exists()
     
-    # 3개 파일이 존재하는지 확인
+    # 4개 파일이 존재하는지 확인
     json_files = list(iep_version_dir.glob("*.json"))
-    assert len(json_files) == 3
+    assert len(json_files) == 4
     
     # 각 파일 내용 확인
     for item in created_files:
@@ -79,11 +79,14 @@ def test_create_iep_file_by_type(
             assert isinstance(content, dict)
             
         # 파일 타입별 내용 검증
-        if item["file_type"] == "goal":
+        if item["file_type"] == "student_info":
+            assert "name" in content
+            assert "korean_domain" in content
+        elif item["file_type"] == "goal":
             assert "reading" in content or "numbersOperations" in content
-        elif item["file_type"] == "weekly_plan":
+        elif item["file_type"] == "weekly_content":
             assert "reading" in content or "numbersOperations" in content
-        elif item["file_type"] == "material":
+        elif item["file_type"] == "weekly_material":
             assert "reading" in content or "numbersOperations" in content
 
 
@@ -94,11 +97,11 @@ def test_iep_files_query(client, sample_iep_version, mock_ai_generators, sample_
     
     검증:
     - IEP 파일 생성 후 조회 가능
-    - 3개 파일 메타데이터 반환
+    - 4개 파일 메타데이터 반환
     """
     # 먼저 IEP 파일 생성 (multipart/form-data)
     profile_json = json.dumps(sample_student_profile, ensure_ascii=False).encode('utf-8')
-    file_types = ["goal", "weekly_plan", "material"]
+    file_types = ["student_info", "goal", "weekly_content", "weekly_material"]
     
     for file_type in file_types:
         files = {
@@ -129,7 +132,7 @@ def test_iep_files_query(client, sample_iep_version, mock_ai_generators, sample_
         assert "id" in item
         assert "file_type" in item
         assert "file_path" in item
-        assert item["file_type"] in ["goal", "weekly_plan", "material"]
+        assert item["file_type"] in ["student_info", "goal", "weekly_content", "weekly_material"]
 
 
 @pytest.mark.integration
@@ -142,26 +145,26 @@ def test_mock_ai_data_structure(mock_ai_generators):
     mock_data = mock_ai_generators
     
     # 3개 키 존재 확인
-    assert "goals" in mock_data
-    assert "weekly_plan" in mock_data
-    assert "weekly_materials" in mock_data
+    assert "goal" in mock_data
+    assert "weekly_content" in mock_data
+    assert "weekly_material" in mock_data
     
     # goals 구조 확인
-    goals = mock_data["goals"]
+    goals = mock_data["goal"]
     assert isinstance(goals, dict)
     assert "reading" in goals
     assert "annual_goal" in goals["reading"]
     assert "semester_goal" in goals["reading"]
     
     # weekly_plan 구조 확인
-    weekly_plan = mock_data["weekly_plan"]
+    weekly_plan = mock_data["weekly_content"]
     assert isinstance(weekly_plan, dict)
     assert "reading" in weekly_plan
     assert isinstance(weekly_plan["reading"], list)
     assert len(weekly_plan["reading"]) == 20
     
     # weekly_materials 구조 확인
-    weekly_materials = mock_data["material"]
+    weekly_materials = mock_data["weekly_material"]
     assert isinstance(weekly_materials, dict)
     assert "reading" in weekly_materials
     assert isinstance(weekly_materials["reading"], list)

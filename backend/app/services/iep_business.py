@@ -3,7 +3,7 @@ IEP 비즈니스 로직 서비스
 
 - 연간 목표 상속 (2학기 → 1학기 annual_*_goal 복사)
 - 파일 저장/업데이트 통합 (덮어쓰기 로직)
-- IEP 완료 검증 (3개 파일 존재 확인)
+- IEP 완료 검증 (4개 파일 존재 확인)
 """
 
 from __future__ import annotations
@@ -150,7 +150,7 @@ def save_or_update_iep_file(
     Args:
         db: 데이터베이스 세션
         iep_version_id: IEP 버전 ID
-        file_type: 파일 타입 ("goal", "weekly_plan", "material")
+        file_type: 파일 타입 ("student_info", "goal", "weekly_content", "weekly_material")
         content: JSON 컨텐츠
     
     Returns:
@@ -171,7 +171,7 @@ def save_or_update_iep_file(
             )
         
         # 2. 파일 타입 검증
-        valid_file_types = ["goal", "weekly_plan", "material"]
+        valid_file_types = ["student_info", "goal", "weekly_content", "weekly_material"]
         if file_type not in valid_file_types:
             raise IEPBusinessError(
                 f"Invalid file_type: {file_type}. Must be one of {valid_file_types}"
@@ -220,12 +220,13 @@ def verify_iep_complete(
     iep_version_id: uuid.UUID
 ) -> bool:
     """
-    IEP 완료 검증 (3개 파일 모두 존재해야 완료)
+    IEP 완료 검증 (4개 파일 모두 존재해야 완료)
     
     다음 파일들이 모두 존재하는지 확인:
-    - goals
-    - weekly_plan
-    - weekly_materials
+    - student_info
+    - goal
+    - weekly_content
+    - weekly_material
     
     Args:
         db: 데이터베이스 세션
@@ -249,7 +250,7 @@ def verify_iep_complete(
             )
         
         # 2. 필수 파일 타입 목록
-        required_file_types = ["goal", "weekly_plan", "material"]
+        required_file_types = ["student_info", "goal", "weekly_content", "weekly_material"]
         
         # 3. 각 파일 타입별로 존재 확인
         for file_type in required_file_types:
@@ -278,6 +279,3 @@ __all__ = [
     "verify_iep_complete",
     "IEPBusinessError",
 ]
-
-
-

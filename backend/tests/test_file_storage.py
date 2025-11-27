@@ -60,7 +60,7 @@ def test_save_creates_directory(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "storage_path", str(tmp_path))
     
     test_id = str(uuid.uuid4())
-    file_path = save_json_file(test_id, "weekly_plan", {"week": 1})
+    file_path = save_json_file(test_id, "weekly_content", {"week": 1})
     
     expected_dir = tmp_path / "iep" / test_id
     assert expected_dir.exists()
@@ -100,8 +100,8 @@ def test_multiple_files_same_version(tmp_path, monkeypatch):
     
     # 여러 파일 타입 저장
     path1 = save_json_file(test_id, "goal", {"type": "goal"})
-    path2 = save_json_file(test_id, "weekly_plan", {"type": "plan"})
-    path3 = save_json_file(test_id, "material", {"type": "material"})
+    path2 = save_json_file(test_id, "weekly_content", {"type": "plan"})
+    path3 = save_json_file(test_id, "weekly_material", {"type": "material"})
     
     # 모두 같은 디렉토리에 있어야 함
     assert Path(path1).parent == Path(path2).parent == Path(path3).parent
@@ -110,4 +110,3 @@ def test_multiple_files_same_version(tmp_path, monkeypatch):
     assert load_json_file(path1)["type"] == "goal"
     assert load_json_file(path2)["type"] == "plan"
     assert load_json_file(path3)["type"] == "material"
-

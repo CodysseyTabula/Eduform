@@ -10,9 +10,9 @@ from docx import Document
 
 
 def _create_all_iep_files(client, iep_version_id, student_profile):
-    """DOCX 생성 전에 3개 file_type 모두 준비"""
+    """DOCX 생성 전에 4개 file_type 모두 준비"""
     profile_json = json.dumps(student_profile, ensure_ascii=False).encode('utf-8')
-    for file_type in ["goal", "weekly_plan", "material"]:
+    for file_type in ["student_info", "goal", "weekly_content", "weekly_material"]:
         files = {
             "file": ("student_profile.json", profile_json, "application/json")
         }
@@ -35,7 +35,7 @@ def test_download_iep_docx(
     GET /iep-versions/{iep_version_id}/docx - DOCX 다운로드 테스트
     
     검증:
-    - 사전 조건: 3개 IEP 파일 존재
+    - 사전 조건: 4개 IEP 파일 존재
     - 200 OK 응답
     - Content-Type이 DOCX 형식
     - 다운로드된 파일이 유효한 DOCX

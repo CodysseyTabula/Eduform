@@ -165,8 +165,8 @@ def mock_ai_generators():
          patch("ai_module.generate_weekly_materials", return_value=mock_weekly_materials):
         yield {
             "goal": mock_goals,
-            "weekly_plan": mock_weekly_plan,
-            "material": mock_weekly_materials
+            "weekly_content": mock_weekly_plan,
+            "weekly_material": mock_weekly_materials
         }
 
 

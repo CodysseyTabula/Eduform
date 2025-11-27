@@ -21,7 +21,7 @@ class IEPFileResponse(BaseModel):
     
     id: UUID
     iep_version_id: UUID
-    file_type: Literal["goal", "weekly_plan", "material"]
+    file_type: Literal["student_info", "goal", "weekly_content", "weekly_material"]
     file_path: str
     updated_at: datetime
     
@@ -116,4 +116,3 @@ class WeeklyMaterialsContent(BaseModel):
     changeAndRelations: Optional[List[WeeklyMaterialItem]] = None
     geometryMeasurement: Optional[List[WeeklyMaterialItem]] = None
     dataAndProbability: Optional[List[WeeklyMaterialItem]] = None
-

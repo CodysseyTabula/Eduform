@@ -168,7 +168,7 @@ def test_save_or_update_iep_file_update_existing(
     
     # file_path는 새 경로로 업데이트됨
     assert file_v2.file_path != original_file_path
-    assert "goals-" in file_v2.file_path
+    assert "goal-" in file_v2.file_path
     
     # DB에서 해당 타입의 파일이 하나만 존재하는지 확인
     files = test_db.query(IEPFile).filter(
@@ -219,9 +219,9 @@ def test_verify_iep_complete_all_files_exist(
     test_db: Session,
     sample_iep_version_1st: IEPVersion
 ):
-    """3개 파일 모두 존재할 때 완료 검증 통과 테스트"""
-    # Given - 3개 파일 모두 생성
-    for file_type in ["goal", "weekly_plan", "material"]:
+    """4개 파일 모두 존재할 때 완료 검증 통과 테스트"""
+    # Given - 4개 파일 모두 생성
+    for file_type in ["student_info", "goal", "weekly_content", "weekly_material"]:
         save_or_update_iep_file(
             db=test_db,
             iep_version_id=sample_iep_version_1st.id,
@@ -245,8 +245,8 @@ def test_verify_iep_complete_missing_one_file(
     sample_iep_version_1st: IEPVersion
 ):
     """파일 하나 누락 시 완료 검증 실패 테스트"""
-    # Given - 2개 파일만 생성 (weekly_materials 누락)
-    for file_type in ["goal", "weekly_plan"]:
+    # Given - 일부 파일만 생성 (weekly_material 누락)
+    for file_type in ["student_info", "goal", "weekly_content"]:
         save_or_update_iep_file(
             db=test_db,
             iep_version_id=sample_iep_version_1st.id,
@@ -410,8 +410,8 @@ def test_full_workflow_first_semester(
     sample_iep_version_1st: IEPVersion
 ):
     """1학기 전체 워크플로우 테스트"""
-    # 1. 3개 파일 생성
-    for file_type in ["goal", "weekly_plan", "material"]:
+    # 1. 4개 파일 생성
+    for file_type in ["student_info", "goal", "weekly_content", "weekly_material"]:
         save_or_update_iep_file(
             db=test_db,
             iep_version_id=sample_iep_version_1st.id,
@@ -440,4 +440,3 @@ def test_full_workflow_first_semester(
         db=test_db,
         iep_version_id=sample_iep_version_1st.id
     ) is True
-
