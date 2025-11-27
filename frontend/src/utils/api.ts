@@ -180,7 +180,8 @@ export const createIEPFile = async (
   });
   
   if (!response.ok) {
-    throw new Error('IEP 파일 생성에 실패했습니다.');
+    const errorData = await response.json().catch(() => ({ detail: 'IEP 파일 생성에 실패했습니다.' }));
+    throw new Error(errorData.detail || 'IEP 파일 생성에 실패했습니다.');
   }
   
   return response.json();

@@ -8,6 +8,7 @@ interface ButtonProps {
   onClick?: () => void;
   type?: 'button' | 'submit' | 'reset';
   className?: string;
+  disabled?: boolean;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -16,7 +17,8 @@ const Button: React.FC<ButtonProps> = ({
   arrowDirection,
   onClick,
   type = 'button',
-  className
+  className,
+  disabled = false
 }) => {
   const renderIcon = () => {
     if (icon) {
@@ -73,6 +75,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       className={`button ${className || ''}`}
       onClick={onClick}
+      disabled={disabled}
     >
       {renderIcon() && (
         <span className="button-icon-wrapper">

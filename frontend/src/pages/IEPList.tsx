@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header, Sidebar, Line, TextBox, Dropdown, CheckboxGroup, Button } from '../components';
 import { 
@@ -10,8 +10,7 @@ import {
   updateIEPFile,
   getIEPFileContent,
   downloadIEPDocx,
-  type IEPVersion,
-  type IEPFile
+  type IEPVersion
 } from '../utils/api';
 import { getStudents, type Student } from '../utils/api';
 import penIcon from '../assets/images/pen.png';
@@ -46,7 +45,7 @@ const IEPList: React.FC = () => {
   const navigate = useNavigate();
   
   const [student, setStudent] = useState<Student | null>(null);
-  const [iepVersions, setIepVersions] = useState<IEPVersion[]>([]);
+  const [iepVersions, setIepVersions] = useState<Omit<IEPVersion, 'student_id'>[]>([]);
   const [currentIepId, setCurrentIepId] = useState<string | null>(null);
   const [currentIepFileId, setCurrentIepFileId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -57,6 +56,11 @@ const IEPList: React.FC = () => {
   const [modalYear, setModalYear] = useState('');
   const [modalSemester, setModalSemester] = useState('');
   const [modalError, setModalError] = useState('');
+  
+  // 저장 결과 모달 상태
+  const [isSaveResultModalOpen, setIsSaveResultModalOpen] = useState(false);
+  const [saveResult, setSaveResult] = useState<'success' | 'error' | null>(null);
+  const [saveErrorMessage, setSaveErrorMessage] = useState('');
   
   // 폼 데이터
   const [formData, setFormData] = useState<IEPFormData>({
@@ -126,7 +130,12 @@ const IEPList: React.FC = () => {
       if (sortedVersions.length > 0) {
         const latest = await getLatestIEP(studentId);
         setCurrentIepId(latest.id);
-        loadIEPData(latest.id);
+        await loadIEPData(latest.id);
+      } else {
+        // IEP가 없으면 빈 상태로 설정
+        setCurrentIepId(null);
+        setCurrentIepFileId(null);
+        setIsEditing(false);
       }
     } catch (err) {
       console.error('Error loading data:', err);
@@ -172,8 +181,8 @@ const IEPList: React.FC = () => {
               : (jsonData.math_domain ? jsonData.math_domain.split(', ').filter(Boolean) : []);
             
             // 영문 키를 한글로 변환
-            const koreanDomainsList = koreanDomainArray.map(key => keyToDomain[key] || key).filter(Boolean);
-            const mathDomainsList = mathDomainArray.map(key => keyToDomain[key] || key).filter(Boolean);
+            const koreanDomainsList = koreanDomainArray.map((key: string) => keyToDomain[key] || key).filter(Boolean);
+            const mathDomainsList = mathDomainArray.map((key: string) => keyToDomain[key] || key).filter(Boolean);
             
             setFormData(prev => ({
               ...prev,
@@ -227,9 +236,9 @@ const IEPList: React.FC = () => {
           iep_start_date: '',
           iep_end_date: '',
           guardian_opinion: '',
-          cognitive_level: '0',
-          social_psych_level: '0',
-          motor_daily_level: '0',
+          cognitive_level: '',
+          social_psych_level: '',
+          motor_daily_level: '',
           vci_score: 0,
           visual_spatial_score: 0,
           fri_score: 0,
@@ -296,6 +305,7 @@ const IEPList: React.FC = () => {
       });
       setIepVersions(updatedVersions);
       
+      // 새로 생성된 IEP로 이동
       setCurrentIepId(newIEP.id);
       setCurrentIepFileId(null);
       setIsEditing(true);
@@ -313,6 +323,9 @@ const IEPList: React.FC = () => {
       setSubject2('');
       setKoreanDomains([]);
       setMathDomains([]);
+      
+      // 새 IEP 데이터 로드 (빈 상태로 시작)
+      await loadIEPData(newIEP.id);
     } catch (err) {
       console.error('Error creating IEP:', err);
       setModalError('IEP 생성에 실패했습니다.');
@@ -398,9 +411,17 @@ const IEPList: React.FC = () => {
       }
       
       setIsEditing(false);
+      
+      // 저장 성공 모달 표시
+      setSaveResult('success');
+      setIsSaveResultModalOpen(true);
     } catch (err) {
       console.error('Error saving IEP:', err);
-      alert('저장에 실패했습니다.');
+      
+      // 저장 실패 모달 표시
+      setSaveResult('error');
+      setSaveErrorMessage(err instanceof Error ? err.message : '저장에 실패했습니다.');
+      setIsSaveResultModalOpen(true);
     }
   };
 
@@ -500,10 +521,49 @@ const IEPList: React.FC = () => {
     return [];
   };
 
-  const sidebarMenuItems = [
+  // 교육계획 버튼 활성화 조건 체크
+  const canNavigateToSyllabus = (subject: string): boolean => {
+    // 1. 저장이 완료되어야 함 (currentIepFileId가 있어야 함)
+    if (!currentIepFileId) {
+      return false;
+    }
+
+    // 2. 학습영역을 1개 이상 선택했어야 함
+    let hasDomain = false;
+    if (subject === '국어') {
+      hasDomain = koreanDomains.length > 0;
+    } else if (subject === '수학') {
+      hasDomain = mathDomains.length > 0;
+    }
+    if (!hasDomain) {
+      return false;
+    }
+
+    // 3. 수행수준에 1글자 이상 입력해야 함
+    let hasPerformanceLevel = false;
+    if (subject === '국어') {
+      hasPerformanceLevel = formData.korean_performance_level.trim().length > 0;
+    } else if (subject === '수학') {
+      hasPerformanceLevel = formData.math_performance_level.trim().length > 0;
+    }
+    if (!hasPerformanceLevel) {
+      return false;
+    }
+
+    return true;
+  };
+
+  const sidebarMenuItems = useMemo(() => [
     '+ 새 IEP 만들기',
     ...iepVersions.map(iep => `${iep.year}년 ${iep.semester}학기`),
-  ];
+  ], [iepVersions]);
+
+  // 현재 선택된 IEP에 해당하는 사이드바 항목 계산
+  const activeSidebarItem = useMemo(() => {
+    if (!currentIepId) return null;
+    const currentIEP = iepVersions.find(iep => iep.id === currentIepId);
+    return currentIEP ? `${currentIEP.year}년 ${currentIEP.semester}학기` : null;
+  }, [currentIepId, iepVersions]);
 
   const handleSidebarClick = (item: string) => {
     if (item === '+ 새 IEP 만들기') {
@@ -533,6 +593,100 @@ const IEPList: React.FC = () => {
     );
   }
 
+  // IEP가 없을 때 빈 상태 표시
+  if (iepVersions.length === 0 || !currentIepId) {
+    return (
+      <div className="iep-list-page">
+        <Header />
+        
+        <div className="iep-list-layout">
+          <Sidebar
+            title={student.name}
+            menuItems={sidebarMenuItems}
+            onMenuItemClick={handleSidebarClick}
+            activeItem={activeSidebarItem}
+          />
+          
+          <main className="iep-list-main">
+            <div className="iep-empty-state">
+              <p>아직 만든 IEP가 없습니다.</p>
+            </div>
+          </main>
+        </div>
+
+        {/* 새 IEP 생성 모달 */}
+        {isModalOpen && (
+          <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2 className="modal-title">새 IEP 만들기</h2>
+                <button className="modal-close" onClick={() => setIsModalOpen(false)}>
+                  ×
+                </button>
+              </div>
+              
+              <div className="modal-form">
+                <div className="form-group">
+                  <label htmlFor="modal-year" className="form-label">
+                    년도
+                  </label>
+                  <input
+                    id="modal-year"
+                    type="text"
+                    value={modalYear}
+                    onChange={(e) => setModalYear(e.target.value.replace(/\D/g, ''))}
+                    className="form-input"
+                    placeholder="예: 2025"
+                    maxLength={4}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="modal-semester" className="form-label">
+                    학기
+                  </label>
+                  <input
+                    id="modal-semester"
+                    type="text"
+                    value={modalSemester}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      if (value === '' || value === '1' || value === '2') {
+                        setModalSemester(value);
+                      }
+                    }}
+                    className="form-input"
+                    placeholder="1 또는 2"
+                    maxLength={1}
+                  />
+                </div>
+
+                {modalError && <div className="form-error">{modalError}</div>}
+
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="modal-button cancel"
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    className="modal-button submit"
+                    onClick={handleModalSubmit}
+                  >
+                    생성
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="iep-list-page">
       <Header />
@@ -542,6 +696,7 @@ const IEPList: React.FC = () => {
           title={student.name}
           menuItems={sidebarMenuItems}
           onMenuItemClick={handleSidebarClick}
+          activeItem={activeSidebarItem}
         />
         
         <main className="iep-list-main">
@@ -686,20 +841,38 @@ const IEPList: React.FC = () => {
                   { key: 'wmi_score', label: '작업 기억' },
                   { key: 'psi_score', label: '처리 속도' },
                   { key: 'fsiq_score', label: '전체 지능' },
-                ].map(({ key, label }) => (
-                  <div key={key} className="iep-field">
-                    <label className="iep-field-label">{label}</label>
-                    <TextBox>
-                      <input
-                        type="number"
-                        value={formData[key as keyof IEPFormData] as number}
-                        onChange={(e) => setFormData(prev => ({ ...prev, [key]: Number(e.target.value) }))}
-                        disabled={!isEditing}
-                        className="iep-input"
-                      />
-                    </TextBox>
-                  </div>
-                ))}
+                ].map(({ key, label }) => {
+                  const scoreValue = formData[key as keyof IEPFormData] as number;
+                  const displayValue = scoreValue === 0 ? '' : scoreValue.toString();
+                  
+                  return (
+                    <div key={key} className="iep-field">
+                      <label className="iep-field-label">{label}</label>
+                      <TextBox>
+                        <input
+                          type="number"
+                          value={displayValue}
+                          placeholder="점수 입력"
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              [key]: value === '' ? 0 : Number(value) 
+                            }));
+                          }}
+                          onFocus={(e) => {
+                            // 포커스 시 값이 0이면 자동으로 선택되어 한 번에 지울 수 있도록
+                            if (scoreValue === 0) {
+                              e.target.select();
+                            }
+                          }}
+                          disabled={!isEditing}
+                          className="iep-input"
+                        />
+                      </TextBox>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -762,6 +935,7 @@ const IEPList: React.FC = () => {
                       <Button
                         arrowDirection="right"
                         onClick={() => navigate(`/students/${studentId}/iep-versions/${currentIepId}/syllabus?subject=${subject1}`)}
+                        disabled={!canNavigateToSyllabus(subject1)}
                       >
                         교육계획
                       </Button>
@@ -823,6 +997,7 @@ const IEPList: React.FC = () => {
                       <Button
                         arrowDirection="right"
                         onClick={() => navigate(`/students/${studentId}/iep-versions/${currentIepId}/syllabus?subject=${subject2}`)}
+                        disabled={!canNavigateToSyllabus(subject2)}
                       >
                         교육계획
                       </Button>
@@ -834,6 +1009,46 @@ const IEPList: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* 저장 결과 모달 */}
+      {isSaveResultModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsSaveResultModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">
+                {saveResult === 'success' ? '저장 완료' : '저장 실패'}
+              </h2>
+              <button className="modal-close" onClick={() => setIsSaveResultModalOpen(false)}>
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-form">
+              <div className="form-group">
+                {saveResult === 'success' ? (
+                  <p style={{ textAlign: 'center', fontSize: '16px', color: '#333' }}>
+                    IEP 정보가 성공적으로 저장되었습니다.
+                  </p>
+                ) : (
+                  <p style={{ textAlign: 'center', fontSize: '16px', color: '#d32f2f' }}>
+                    {saveErrorMessage}
+                  </p>
+                )}
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="modal-button submit"
+                  onClick={() => setIsSaveResultModalOpen(false)}
+                >
+                  확인
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 새 IEP 생성 모달 */}
       {isModalOpen && (
