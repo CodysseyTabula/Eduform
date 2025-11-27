@@ -216,7 +216,7 @@ const SyllabusPage: React.FC = () => {
       const studentProfileFile = new File([studentProfileBlob], 'student_info.json', { type: 'application/json' });
       
       formData.append('iep_version_id', iepVersionId);
-      formData.append('file_type', 'goals'); // 백엔드는 "goals" 사용
+      formData.append('file_type', 'goal'); // 백엔드는 "goal" 사용
       formData.append('file', studentProfileFile);
 
       const response = await fetch(`${API_BASE_URL}/iep-files`, {
@@ -314,7 +314,7 @@ const SyllabusPage: React.FC = () => {
       const studentProfileFile = new File([studentProfileBlob], 'student_info.json', { type: 'application/json' });
       
       formData.append('iep_version_id', iepVersionId);
-      formData.append('file_type', 'weekly_plan'); // 백엔드는 "weekly_plan" 사용
+      formData.append('file_type', 'weekly_content'); // 백엔드는 "weekly_content" 사용
       formData.append('file', studentProfileFile);
 
       const response = await fetch(`${API_BASE_URL}/iep-files`, {
@@ -392,7 +392,7 @@ const SyllabusPage: React.FC = () => {
       const weeklyContentFileForAPI = new File([weeklyContentBlob], 'weekly_content.json', { type: 'application/json' });
       
       formData.append('iep_version_id', iepVersionId);
-      formData.append('file_type', 'weekly_materials'); // 백엔드는 "weekly_materials" 사용
+      formData.append('file_type', 'weekly_material'); // 백엔드는 "weekly_material" 사용
       formData.append('file', weeklyContentFileForAPI);
 
       const response = await fetch(`${API_BASE_URL}/iep-files`, {
