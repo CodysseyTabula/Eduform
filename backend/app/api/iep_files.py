@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import List
 from uuid import UUID
 
+import os
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
@@ -113,16 +114,20 @@ async def create_iep_file(
     
     # 6. file_type에 따라 학생 정보 저장 또는 AI 함수 호출
     try:
-        from ai_module import generate_goals, generate_weekly_plan, generate_weekly_materials
-        
+        from ai_module.llm import (
+            generate_goals_llm,
+            generate_weekly_plan_llm,
+            generate_weekly_materials_llm,
+        )
+
         if file_type == "student_info":
             generated_data = profile_dict
         elif file_type == "goal":
-            generated_data = generate_goals(profile_dict)
+            generated_data = generate_goals_llm(profile_dict)
         elif file_type == "weekly_content":
-            generated_data = generate_weekly_plan(profile_dict)
+            generated_data = generate_weekly_plan_llm(profile_dict)
         elif file_type == "weekly_material":
-            generated_data = generate_weekly_materials(profile_dict)
+            generated_data = generate_weekly_materials_llm(profile_dict)
         
     except Exception as e:
         raise HTTPException(
