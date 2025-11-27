@@ -352,6 +352,37 @@ const IEPList: React.FC = () => {
     if (!currentIepId) return;
     
     try {
+      // 데이터 유효성 검사
+      // 1. current_semester 검증 (1 또는 2만 허용)
+      const semesterStr = formData.current_semester.replace('학기', '').trim();
+      const semesterNum = Number(semesterStr);
+      if (isNaN(semesterNum) || (semesterNum !== 1 && semesterNum !== 2)) {
+        setSaveResult('error');
+        setSaveErrorMessage('학기는 1 또는 2만 입력 가능합니다.');
+        setIsSaveResultModalOpen(true);
+        return;
+      }
+      
+      // 2. 점수 필드 검증 (0~200 범위)
+      const scoreFields = [
+        { key: 'vci_score', label: '언어 이해' },
+        { key: 'visual_spatial_score', label: '시공간' },
+        { key: 'fri_score', label: '유동 추론' },
+        { key: 'wmi_score', label: '작업 기억' },
+        { key: 'psi_score', label: '처리 속도' },
+        { key: 'fsiq_score', label: '전체 지능' },
+      ];
+      
+      for (const field of scoreFields) {
+        const score = formData[field.key as keyof IEPFormData] as number;
+        if (score < 0 || score > 200) {
+          setSaveResult('error');
+          setSaveErrorMessage(`${field.label} 점수는 0~200 사이의 값만 입력 가능합니다. (현재 값: ${score})`);
+          setIsSaveResultModalOpen(true);
+          return;
+        }
+      }
+      
       // JSON 데이터 생성 (백엔드 스키마에 맞게)
       // 도메인을 영문 camelCase로 변환
       const domainToKey: Record<string, string> = {
@@ -374,7 +405,7 @@ const IEPList: React.FC = () => {
         name: formData.name,
         birth: formData.birth,
         grade: Number(formData.grade) || 1, // int
-        current_semester: Number(formData.current_semester.replace('학기', '').trim()) || 1, // int (1 or 2)
+        current_semester: semesterNum, // int (1 or 2) - 검증된 값 사용
         start_date: formData.iep_start_date || '', // 학기 시작일
         end_date: formData.iep_end_date || '', // 학기 종료일
         guardian_opinion: formData.guardian_opinion,
@@ -738,9 +769,18 @@ const IEPList: React.FC = () => {
                     <input
                       type="text"
                       value={formData.current_semester}
-                      onChange={(e) => setFormData(prev => ({ ...prev, current_semester: e.target.value }))}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // "학기" 텍스트 제거 후 숫자만 추출
+                        const numStr = value.replace('학기', '').trim();
+                        // 1 또는 2만 허용
+                        if (numStr === '' || numStr === '1' || numStr === '2') {
+                          setFormData(prev => ({ ...prev, current_semester: numStr === '' ? '' : `${numStr}학기` }));
+                        }
+                      }}
                       disabled={!isEditing}
                       className="iep-input"
+                      placeholder="1학기 또는 2학기"
                     />
                   </TextBox>
                 </div>
@@ -852,13 +892,26 @@ const IEPList: React.FC = () => {
                         <input
                           type="number"
                           value={displayValue}
-                          placeholder="점수 입력"
+                          placeholder="점수 입력 (0~200)"
+                          min={0}
+                          max={200}
                           onChange={(e) => {
                             const value = e.target.value;
-                            setFormData(prev => ({ 
-                              ...prev, 
-                              [key]: value === '' ? 0 : Number(value) 
-                            }));
+                            if (value === '') {
+                              setFormData(prev => ({ 
+                                ...prev, 
+                                [key]: 0 
+                              }));
+                            } else {
+                              const numValue = Number(value);
+                              // 0~200 범위로 제한
+                              if (!isNaN(numValue) && numValue >= 0 && numValue <= 200) {
+                                setFormData(prev => ({ 
+                                  ...prev, 
+                                  [key]: numValue 
+                                }));
+                              }
+                            }
                           }}
                           onFocus={(e) => {
                             // 포커스 시 값이 0이면 자동으로 선택되어 한 번에 지울 수 있도록
