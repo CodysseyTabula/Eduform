@@ -26,6 +26,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    env_file:
+      - ./backend/.env
     environment:
       # Docker 환경에서 DB_HOST를 'db'로 오버라이드
       DB_HOST: db
