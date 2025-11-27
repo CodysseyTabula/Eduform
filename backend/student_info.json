@@ -1,0 +1,23 @@
+{
+  "name": "홍길동",
+  "birth": "2010-05-15",
+  "grade": 3,
+  "current_semester": 1,
+  "start_date": "2024-03-01",
+  "end_date": "2024-08-31",
+  "guardian_opinion": "학습에 적극적인 자세를 보이고 있습니다. 읽기와 쓰기 능력 향상에 관심이 많습니다.",
+  "cognitive_level": "보통",
+  "social_psych_level": "양호",
+  "motor_daily_level": "양호",
+  "vci_score": 95,
+  "visual_spatial_score": 88,
+  "fri_score": 92,
+  "wmi_score": 90,
+  "psi_score": 85,
+  "fsiq_score": 90,
+  "korean_performance_level": "보통",
+  "math_performance_level": "보통",
+  "korean_domain": ["읽기", "쓰기"],
+  "math_domain": ["수와 연산"]
+}
+
