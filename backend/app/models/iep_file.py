@@ -23,7 +23,7 @@ class IEPFile(Base):
         ForeignKey("iep_version.id", ondelete="CASCADE"),
         nullable=False,
     )
-    file_type: Mapped[str] = mapped_column(nullable=False)  # "goals", "weekly_plan", "weekly_materials"
+    file_type: Mapped[str] = mapped_column(nullable=False)  # "student_info", "goal", "weekly_content", "weekly_material"
     file_path: Mapped[str] = mapped_column(nullable=False)  # 디스크 경로
     updated_at: Mapped[datetime] = mapped_column(
         default=lambda: datetime.now(timezone.utc),

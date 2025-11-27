@@ -27,7 +27,7 @@ def save_json_file(iep_version_id: str, file_type: str, content: dict) -> str:
     
     Args:
         iep_version_id: IEP 버전 ID (UUID)
-        file_type: 파일 타입 ("goals", "weekly_plan", "weekly_materials")
+        file_type: 파일 타입 ("student_info", "goal", "weekly_content", "weekly_material")
         content: JSON 컨텐츠 (dict)
     
     Returns:
@@ -112,4 +112,3 @@ def load_json_file(file_path: str) -> dict[str, Any]:
 
 
 __all__ = ["save_json_file", "load_json_file", "FileStorageError"]
-

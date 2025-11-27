@@ -165,7 +165,7 @@ def download_iep_docx(
     """
     IEP DOCX 파일 다운로드
     
-    IEP 버전의 3개 JSON 파일(goals, weekly_plan, weekly_materials)을 읽어
+    IEP 버전의 4개 JSON 파일(student_info, goal, weekly_content, weekly_material)을 읽어
     DOCX 문서를 동적으로 생성하고 다운로드를 제공합니다.
     
     - **iep_version_id**: IEP 버전 ID (UUID)
@@ -176,7 +176,7 @@ def download_iep_docx(
         - Content-Disposition: attachment; filename=IEP_{iep_version_id}.docx
     
     Raises:
-        404: IEP 버전이나 필수 파일(goals, weekly_plan, weekly_materials)이 없을 때
+        404: IEP 버전이나 필수 파일(student_info, goal, weekly_content, weekly_material)이 없을 때
         500: 문서 생성 중 오류 발생 시
     """
     try:
@@ -207,4 +207,3 @@ def download_iep_docx(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unexpected error: {str(e)}"
         )
-

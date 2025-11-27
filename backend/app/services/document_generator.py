@@ -1,7 +1,7 @@
 """
 IEP DOCX 문서 생성 서비스
 
-IEP JSON 파일(goals, weekly_plan, weekly_materials)을 읽어
+IEP JSON 파일(student_info, goal, weekly_content, weekly_material)을 읽어
 DOCX 문서를 생성하고 다운로드를 제공합니다.
 """
 
@@ -76,7 +76,7 @@ def generate_docx_for_iep(
                 f"IEP version not found: {iep_version_id}"
             )
         
-        # 2. IEP 파일 메타데이터 조회 (3개 파일 필요)
+        # 2. IEP 파일 메타데이터 조회 (4개 파일 필요)
         iep_files = db.query(IEPFile).filter(
             IEPFile.iep_version_id == iep_version_id
         ).all()
@@ -84,7 +84,7 @@ def generate_docx_for_iep(
         file_map = {f.file_type: f.file_path for f in iep_files}
         
         # 필수 파일 확인
-        required_types = ["goals", "weekly_plan", "weekly_materials"]
+        required_types = ["student_info", "goal", "weekly_content", "weekly_material"]
         missing_types = [ft for ft in required_types if ft not in file_map]
         
         if missing_types:
@@ -94,9 +94,10 @@ def generate_docx_for_iep(
         
         # 3. JSON 파일 로드
         try:
-            goals_data = load_json_file(file_map["goals"])
-            weekly_plan_data = load_json_file(file_map["weekly_plan"])
-            weekly_materials_data = load_json_file(file_map["weekly_materials"])
+            student_info_data = load_json_file(file_map["student_info"])
+            goals_data = load_json_file(file_map["goal"])
+            weekly_plan_data = load_json_file(file_map["weekly_content"])
+            weekly_materials_data = load_json_file(file_map["weekly_material"])
         except FileStorageError as e:
             raise DocumentNotFoundError(f"Failed to load IEP JSON files: {e}") from e
         
@@ -108,7 +109,7 @@ def generate_docx_for_iep(
         title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
         
         # IEP 메타데이터 섹션
-        _add_metadata_section(doc, iep_version)
+        _add_metadata_section(doc, iep_version, student_info_data)
         
         # 연간/학기 목표 섹션
         _add_goals_section(doc, goals_data)
@@ -170,7 +171,7 @@ def generate_docx_stream(db: Session, iep_version_id: UUID) -> BytesIO:
         file_map = {f.file_type: f.file_path for f in iep_files}
         
         # 필수 파일 확인
-        required_types = ["goals", "weekly_plan", "weekly_materials"]
+        required_types = ["student_info", "goal", "weekly_content", "weekly_material"]
         missing_types = [ft for ft in required_types if ft not in file_map]
         
         if missing_types:
@@ -180,9 +181,10 @@ def generate_docx_stream(db: Session, iep_version_id: UUID) -> BytesIO:
         
         # 3. JSON 파일 로드
         try:
-            goals_data = load_json_file(file_map["goals"])
-            weekly_plan_data = load_json_file(file_map["weekly_plan"])
-            weekly_materials_data = load_json_file(file_map["weekly_materials"])
+            student_info_data = load_json_file(file_map["student_info"])
+            goals_data = load_json_file(file_map["goal"])
+            weekly_plan_data = load_json_file(file_map["weekly_content"])
+            weekly_materials_data = load_json_file(file_map["weekly_material"])
         except FileStorageError as e:
             raise DocumentNotFoundError(f"Failed to load IEP JSON files: {e}") from e
         
@@ -194,7 +196,7 @@ def generate_docx_stream(db: Session, iep_version_id: UUID) -> BytesIO:
         title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
         
         # IEP 메타데이터 섹션
-        _add_metadata_section(doc, iep_version)
+        _add_metadata_section(doc, iep_version, student_info_data)
         
         # 연간/학기 목표 섹션
         _add_goals_section(doc, goals_data)
@@ -220,7 +222,7 @@ def generate_docx_stream(db: Session, iep_version_id: UUID) -> BytesIO:
 
 # ==================== 내부 헬퍼 함수 ====================
 
-def _add_metadata_section(doc: Document, iep_version: IEPVersion) -> None:
+def _add_metadata_section(doc: Document, iep_version: IEPVersion, student_info: dict[str, Any] | None = None) -> None:
     """IEP 메타데이터 섹션 추가"""
     doc.add_heading('IEP 정보', level=2)
     
@@ -229,6 +231,13 @@ def _add_metadata_section(doc: Document, iep_version: IEPVersion) -> None:
     doc.add_paragraph(f"학기: {iep_version.semester}", style='List Bullet')
     doc.add_paragraph(f"학년: {iep_version.grade}", style='List Bullet')
     doc.add_paragraph(f"생성일: {iep_version.created_at.strftime('%Y-%m-%d %H:%M:%S')}", style='List Bullet')
+    
+    # 학생 프로필 정보
+    if student_info:
+        doc.add_paragraph(f"학생 이름: {student_info.get('name', '')}", style='List Bullet')
+        doc.add_paragraph(f"생년월일: {student_info.get('birth', '')}", style='List Bullet')
+        doc.add_paragraph(f"현재 학기: {student_info.get('current_semester', '')}", style='List Bullet')
+        doc.add_paragraph(f"IEP 기간: {student_info.get('start_date', '')} ~ {student_info.get('end_date', '')}", style='List Bullet')
     
     doc.add_paragraph()  # 간격
 
@@ -374,5 +383,3 @@ __all__ = [
     "DocumentNotFoundError",
     "InvalidDocumentDataError",
 ]
-
-

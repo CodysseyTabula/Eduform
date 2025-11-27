@@ -110,21 +110,21 @@ def test_save_or_update_iep_file_create_new(
     result = save_or_update_iep_file(
         db=test_db,
         iep_version_id=sample_iep_version_1st.id,
-        file_type="goals",
+        file_type="goal",
         content=content
     )
     test_db.commit()
     
     # Then
     assert result.iep_version_id == sample_iep_version_1st.id
-    assert result.file_type == "goals"
+    assert result.file_type == "goal"
     assert result.file_path is not None
-    assert "goals-" in result.file_path
+    assert "goal-" in result.file_path
     
     # DB에 레코드 확인
     db_file = test_db.query(IEPFile).filter(
         IEPFile.iep_version_id == sample_iep_version_1st.id,
-        IEPFile.file_type == "goals"
+        IEPFile.file_type == "goal"
     ).first()
     assert db_file is not None
     assert db_file.id == result.id
@@ -142,7 +142,7 @@ def test_save_or_update_iep_file_update_existing(
     file_v1 = save_or_update_iep_file(
         db=test_db,
         iep_version_id=sample_iep_version_1st.id,
-        file_type="goals",
+        file_type="goal",
         content=content_v1
     )
     test_db.commit()
@@ -157,7 +157,7 @@ def test_save_or_update_iep_file_update_existing(
     file_v2 = save_or_update_iep_file(
         db=test_db,
         iep_version_id=sample_iep_version_1st.id,
-        file_type="goals",
+        file_type="goal",
         content=content_v2
     )
     test_db.commit()
@@ -168,12 +168,12 @@ def test_save_or_update_iep_file_update_existing(
     
     # file_path는 새 경로로 업데이트됨
     assert file_v2.file_path != original_file_path
-    assert "goals-" in file_v2.file_path
+    assert "goal-" in file_v2.file_path
     
     # DB에서 해당 타입의 파일이 하나만 존재하는지 확인
     files = test_db.query(IEPFile).filter(
         IEPFile.iep_version_id == sample_iep_version_1st.id,
-        IEPFile.file_type == "goals"
+        IEPFile.file_type == "goal"
     ).all()
     assert len(files) == 1
     assert files[0].id == original_file_id
@@ -208,7 +208,7 @@ def test_save_or_update_iep_file_nonexistent_version(test_db: Session):
         save_or_update_iep_file(
             db=test_db,
             iep_version_id=fake_id,
-            file_type="goals",
+            file_type="goal",
             content=content
         )
 
@@ -219,9 +219,9 @@ def test_verify_iep_complete_all_files_exist(
     test_db: Session,
     sample_iep_version_1st: IEPVersion
 ):
-    """3개 파일 모두 존재할 때 완료 검증 통과 테스트"""
-    # Given - 3개 파일 모두 생성
-    for file_type in ["goals", "weekly_plan", "weekly_materials"]:
+    """4개 파일 모두 존재할 때 완료 검증 통과 테스트"""
+    # Given - 4개 파일 모두 생성
+    for file_type in ["student_info", "goal", "weekly_content", "weekly_material"]:
         save_or_update_iep_file(
             db=test_db,
             iep_version_id=sample_iep_version_1st.id,
@@ -245,8 +245,8 @@ def test_verify_iep_complete_missing_one_file(
     sample_iep_version_1st: IEPVersion
 ):
     """파일 하나 누락 시 완료 검증 실패 테스트"""
-    # Given - 2개 파일만 생성 (weekly_materials 누락)
-    for file_type in ["goals", "weekly_plan"]:
+    # Given - 일부 파일만 생성 (weekly_material 누락)
+    for file_type in ["student_info", "goal", "weekly_content"]:
         save_or_update_iep_file(
             db=test_db,
             iep_version_id=sample_iep_version_1st.id,
@@ -313,7 +313,7 @@ def test_inherit_annual_goals_success(
     save_or_update_iep_file(
         db=test_db,
         iep_version_id=sample_iep_version_1st.id,
-        file_type="goals",
+        file_type="goal",
         content=semester1_goals
     )
     test_db.commit()
@@ -327,7 +327,7 @@ def test_inherit_annual_goals_success(
     save_or_update_iep_file(
         db=test_db,
         iep_version_id=sample_iep_version_2nd.id,
-        file_type="goals",
+        file_type="goal",
         content=semester2_goals
     )
     test_db.commit()
@@ -342,7 +342,7 @@ def test_inherit_annual_goals_success(
     # Then - 2학기 goals 확인
     semester2_file = test_db.query(IEPFile).filter(
         IEPFile.iep_version_id == sample_iep_version_2nd.id,
-        IEPFile.file_type == "goals"
+        IEPFile.file_type == "goal"
     ).first()
     
     assert semester2_file is not None
@@ -410,8 +410,8 @@ def test_full_workflow_first_semester(
     sample_iep_version_1st: IEPVersion
 ):
     """1학기 전체 워크플로우 테스트"""
-    # 1. 3개 파일 생성
-    for file_type in ["goals", "weekly_plan", "weekly_materials"]:
+    # 1. 4개 파일 생성
+    for file_type in ["student_info", "goal", "weekly_content", "weekly_material"]:
         save_or_update_iep_file(
             db=test_db,
             iep_version_id=sample_iep_version_1st.id,
@@ -430,7 +430,7 @@ def test_full_workflow_first_semester(
     save_or_update_iep_file(
         db=test_db,
         iep_version_id=sample_iep_version_1st.id,
-        file_type="goals",
+        file_type="goal",
         content={"updated": "data"}
     )
     test_db.commit()
@@ -440,4 +440,3 @@ def test_full_workflow_first_semester(
         db=test_db,
         iep_version_id=sample_iep_version_1st.id
     ) is True
-
