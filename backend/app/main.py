@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -10,6 +11,9 @@ from app.db.session import engine
 
 # Import all models to register them with Base.metadata
 import app.models  # noqa
+
+# 환경 변수 로드 (.env 파일)
+load_dotenv()
 
 
 @asynccontextmanager
