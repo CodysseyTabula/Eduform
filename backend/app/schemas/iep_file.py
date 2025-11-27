@@ -23,6 +23,7 @@ class IEPFileResponse(BaseModel):
     iep_version_id: UUID
     file_type: Literal["student_info", "goal", "weekly_content", "weekly_material"]
     file_path: str
+    file_content: Dict[str, Any] | None = None
     updated_at: datetime
     
     model_config = ConfigDict(from_attributes=True)

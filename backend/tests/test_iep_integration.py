@@ -133,6 +133,8 @@ def test_iep_files_query(client, sample_iep_version, mock_ai_generators, sample_
         assert "file_type" in item
         assert "file_path" in item
         assert item["file_type"] in ["student_info", "goal", "weekly_content", "weekly_material"]
+        assert "file_content" in item
+        assert isinstance(item["file_content"], dict)
 
 
 @pytest.mark.integration
