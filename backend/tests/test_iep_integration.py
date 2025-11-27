@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 @pytest.mark.integration
-def test_create_iep_files_with_ai_mock(
+def test_create_iep_file_by_type(
     client,
     sample_iep_version,
     sample_student_profile,
@@ -18,36 +18,47 @@ def test_create_iep_files_with_ai_mock(
     db_session
 ):
     """
-    POST /iep-files - IEP 파일 생성 통합 테스트 (AI 모듈 모킹)
+    POST /iep-files - IEP 파일 생성 테스트 (file_type별로 1개씩)
     
     검증:
-    - AI 모듈 호출 (모킹됨)
-    - 3개의 JSON 파일이 디스크에 생성됨
-    - 3개의 IEPFile 레코드가 DB에 저장됨
+    - file_type에 따라 해당 AI 함수만 호출됨
+    - 1개의 JSON 파일이 디스크에 생성됨
+    - 1개의 IEPFile 레코드가 DB에 저장됨
     """
     # student_profile을 JSON 파일로 변환
     profile_json = json.dumps(sample_student_profile, ensure_ascii=False).encode('utf-8')
     
-    # multipart/form-data 요청
-    files = {
-        "file": ("student_profile.json", profile_json, "application/json")
-    }
-    data = {
-        "iep_version_id": str(sample_iep_version.id)
-    }
+    # file_type별로 각각 호출
+    file_types = ["goals", "weekly_plan", "weekly_materials"]
+    created_files = []
     
-    response = client.post("/iep-files", files=files, data=data)
+    for file_type in file_types:
+        files = {
+            "file": ("student_profile.json", profile_json, "application/json")
+        }
+        data = {
+            "iep_version_id": str(sample_iep_version.id),
+            "file_type": file_type
+        }
+        
+        response = client.post("/iep-files", files=files, data=data)
+        
+        # API 응답 확인
+        assert response.status_code == 201
+        file_data = response.json()
+        
+        assert file_data["file_type"] == file_type
+        assert "id" in file_data
+        assert "file_path" in file_data
+        
+        created_files.append(file_data)
     
-    # API 응답 확인
-    assert response.status_code == 201
-    data = response.json()
-    
-    assert isinstance(data, list)
-    assert len(data) == 3
+    # 3개 파일 모두 생성 확인
+    assert len(created_files) == 3
     
     # 반환된 파일 타입 확인
-    file_types = {item["file_type"] for item in data}
-    assert file_types == {"goals", "weekly_plan", "weekly_materials"}
+    file_types_set = {item["file_type"] for item in created_files}
+    assert file_types_set == {"goals", "weekly_plan", "weekly_materials"}
     
     # 디스크 파일 확인
     iep_version_dir = tmp_storage_path / "iep" / str(sample_iep_version.id)
@@ -58,7 +69,7 @@ def test_create_iep_files_with_ai_mock(
     assert len(json_files) == 3
     
     # 각 파일 내용 확인
-    for item in data:
+    for item in created_files:
         file_path = Path(item["file_path"])
         assert file_path.exists()
         
@@ -87,15 +98,19 @@ def test_iep_files_query(client, sample_iep_version, mock_ai_generators, sample_
     """
     # 먼저 IEP 파일 생성 (multipart/form-data)
     profile_json = json.dumps(sample_student_profile, ensure_ascii=False).encode('utf-8')
-    files = {
-        "file": ("student_profile.json", profile_json, "application/json")
-    }
-    data = {
-        "iep_version_id": str(sample_iep_version.id)
-    }
+    file_types = ["goals", "weekly_plan", "weekly_materials"]
     
-    create_response = client.post("/iep-files", files=files, data=data)
-    assert create_response.status_code == 201
+    for file_type in file_types:
+        files = {
+            "file": ("student_profile.json", profile_json, "application/json")
+        }
+        data = {
+            "iep_version_id": str(sample_iep_version.id),
+            "file_type": file_type
+        }
+        
+        create_response = client.post("/iep-files", files=files, data=data)
+        assert create_response.status_code == 201
     
     # 파일 조회
     response = client.get(f"/iep-versions/{sample_iep_version.id}/iep-files")
@@ -104,7 +119,10 @@ def test_iep_files_query(client, sample_iep_version, mock_ai_generators, sample_
     data = response.json()
     
     assert isinstance(data, list)
-    assert len(data) == 3
+    assert len(data) == len(file_types)
+    
+    file_types_set = {item["file_type"] for item in data}
+    assert file_types_set == set(file_types)
     
     # 각 파일에 필수 필드 확인
     for item in data:
@@ -148,4 +166,3 @@ def test_mock_ai_data_structure(mock_ai_generators):
     assert "reading" in weekly_materials
     assert isinstance(weekly_materials["reading"], list)
     assert len(weekly_materials["reading"]) == 20
-

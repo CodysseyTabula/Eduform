@@ -159,10 +159,10 @@ def mock_ai_generators():
         ]
     }
     
-    # AI 모듈 함수들 모킹
-    with patch("app.services.ai_integration.generate_goals", return_value=mock_goals), \
-         patch("app.services.ai_integration.generate_weekly_plan", return_value=mock_weekly_plan), \
-         patch("app.services.ai_integration.generate_weekly_materials", return_value=mock_weekly_materials):
+    # AI 모듈 함수들 모킹 (실제 OpenAI 호출 방지)
+    with patch("ai_module.generate_goals", return_value=mock_goals), \
+         patch("ai_module.generate_weekly_plan", return_value=mock_weekly_plan), \
+         patch("ai_module.generate_weekly_materials", return_value=mock_weekly_materials):
         yield {
             "goals": mock_goals,
             "weekly_plan": mock_weekly_plan,

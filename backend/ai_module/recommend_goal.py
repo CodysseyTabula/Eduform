@@ -253,7 +253,17 @@ IEP는 특수교육 대상 학생을 위한 개별화된 교육 계획서입니�
 - 목표는 구체적이고 측정 가능하며, 실제 수업에서 달성 가능한 수준으로 작성하세요
 
 응답 형식:
-annual_goal과 semester_goal만 포함해주세요.
+annual_goal과 semester_goal 필드에 목표 내용만 포함해주세요.
+"연간 목표:", "학기 목표:" 같은 라벨이나 접두사는 절대 포함하지 마세요.
+순수하게 목표 내용만 작성해주세요.
+
+잘못된 예시 (하지 마세요):
+annual_goal: "연간 목표: 학생이 읽기 능력을 향상시킨다."
+semester_goal: "학기 목표: 학생이 단어를 정확히 읽을 수 있다."
+
+올바른 예시 (이렇게 작성하세요):
+annual_goal: "읽기 능력을 향상시킨다."
+semester_goal: "단어를 정확히 읽을 수 있다."
 """
     
     response = client.beta.chat.completions.parse(
