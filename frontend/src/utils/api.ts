@@ -122,6 +122,7 @@ export const getIEPVersions = async (studentId: string): Promise<Omit<IEPVersion
 export interface IEPFile {
   id: string;
   file_type: string;
+  file_content: any; // JSON 파일 내용
   file_path: string;
   updated_at: string; // ISO8601
 }
