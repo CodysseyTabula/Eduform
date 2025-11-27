@@ -12,6 +12,7 @@ from app.models.iep_version import IEPVersion
 from app.models.student import Student
 from app.schemas.iep_file import IEPFileResponse
 from app.schemas.iep_version import IEPVersionCreate, IEPVersionResponse
+from app.services.file_storage import load_json_file, FileStorageError
 from app.services.document_generator import (
     generate_docx_stream,
     DocumentNotFoundError,
@@ -153,8 +154,29 @@ def list_iep_files(
         .order_by(IEPFile.updated_at.desc())
         .all()
     )
-    
-    return iep_files
+
+    responses: list[IEPFileResponse] = []
+    for iep_file in iep_files:
+        try:
+            content = load_json_file(iep_file.file_path)
+        except FileStorageError as e:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"IEP file content not found: {e}"
+            ) from e
+
+        responses.append(
+            IEPFileResponse(
+                id=iep_file.id,
+                iep_version_id=iep_file.iep_version_id,
+                file_type=iep_file.file_type,
+                file_path=iep_file.file_path,
+                file_content=content,
+                updated_at=iep_file.updated_at,
+            )
+        )
+
+    return responses
 
 
 @router.get("/iep-versions/{iep_version_id}/docx")

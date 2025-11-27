@@ -32,6 +32,8 @@ scripts_dir = Path(__file__).parent
 from docx import Document
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
+from app.services.file_storage import save_json_file as save_json_file_service
+
 
 # 도메인 매핑
 KOREAN_DOMAIN_MAPPING = {
@@ -232,17 +234,13 @@ def validate_data_format(goals_data: dict, weekly_plan_data: dict, weekly_materi
 
 
 def save_json_file(iep_version_id: str, file_type: str, content: dict) -> str:
-    """JSON 파일 저장"""
-    storage_dir = backend_dir / "storage" / "iep" / iep_version_id
-    storage_dir.mkdir(parents=True, exist_ok=True)
+    """
+    JSON 파일 저장
     
-    timestamp = int(time.time())
-    file_path = storage_dir / f"{file_type}-{timestamp}.json"
-    
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(content, f, ensure_ascii=False, indent=2)
-    
-    return str(file_path)
+    파일 경로 패턴: {STORAGE_PATH}/iep/{iep_version_id}/{file_type}-{ts}.json
+    """
+    # 서비스 함수 사용 (일관성 유지)
+    return save_json_file_service(iep_version_id, file_type, content)
 
 
 def generate_docx(goals_data: dict, weekly_plan_data: dict, weekly_materials_data: dict, 
