@@ -86,8 +86,28 @@ const SyllabusPage: React.FC = () => {
         try {
           const studentData = await getIEPFileContent(studentInfoFile.file_path);
           const domainKey = subject === '국어' ? 'korean_domain' : 'math_domain';
-          const domainString = studentData?.[domainKey] || '';
-          domainList = domainString.split(', ').filter(Boolean);
+          const domainData = studentData?.[domainKey];
+          
+          // 배열인지 문자열인지 확인하고 처리
+          if (Array.isArray(domainData)) {
+            // 배열인 경우: 영문 키를 한글로 변환
+            const keyToDomain: Record<string, string> = {
+              'listeningSpeaking': '듣기⋅말하기',
+              'reading': '읽기',
+              'writing': '쓰기',
+              'grammar': '문법',
+              'literature': '문학',
+              'mediaLiteracy': '매체',
+              'numbersOperations': '수와 연산',
+              'changeAndRelations': '변화와 관계',
+              'geometryMeasurement': '도형과 측정',
+              'dataAndProbability': '자료와 가능성',
+            };
+            domainList = domainData.map((key: string) => keyToDomain[key] || key).filter(Boolean);
+          } else if (typeof domainData === 'string' && domainData) {
+            // 문자열인 경우: 기존 로직 유지
+            domainList = domainData.split(', ').filter(Boolean);
+          }
         } catch (err) {
           console.error('Error loading student info:', err);
         }
