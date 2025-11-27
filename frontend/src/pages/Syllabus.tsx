@@ -8,6 +8,8 @@ import {
   updateIEPFile,
   type IEPFile
 } from '../utils/api';
+
+const API_BASE_URL = 'http://localhost:8000';
 import penIcon from '../assets/images/pen.png';
 import starIcon from '../assets/images/star.png';
 import './Syllabus.css';
@@ -193,27 +195,55 @@ const SyllabusPage: React.FC = () => {
     }
 
     try {
-      // TODO: 백엔드 API 호출
-      // const response = await fetch('/api/ai/recommend-goals', {
-      //   method: 'POST',
-      //   body: JSON.stringify(studentInfo),
-      // });
-      // const recommendedGoals = await response.json();
+      // 학생 정보 파일 가져오기
+      const files = await getIEPFiles(iepVersionId);
+      const studentInfoFile = files.find(f => f.file_type === 'student_info');
+      
+      if (!studentInfoFile) {
+        alert('학생 정보 파일이 없습니다. 먼저 학생 정보를 저장해주세요.');
+        return;
+      }
 
-      // TODO: 백엔드 API 호출로 실제 추천 받기
-      // 임시로 빈 목표 설정 (실제로는 API 응답 사용)
+      // 학생 프로필 데이터 로드
+      const studentProfile = await getIEPFileContent(studentInfoFile.file_path);
+      
+      // 백엔드 API 호출: AI 목표 추천
+      const formData = new FormData();
+      const studentProfileBlob = new Blob([JSON.stringify(studentProfile, null, 2)], { type: 'application/json' });
+      const studentProfileFile = new File([studentProfileBlob], 'student_info.json', { type: 'application/json' });
+      
+      formData.append('iep_version_id', iepVersionId);
+      formData.append('file_type', 'goals'); // 백엔드는 "goals" 사용
+      formData.append('file', studentProfileFile);
+
+      const response = await fetch(`${API_BASE_URL}/iep-files`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('AI 목표 추천에 실패했습니다.');
+      }
+
+      const createdFile = await response.json();
+      
+      // 생성된 파일 내용 로드
+      const goalContent = await getIEPFileContent(createdFile.file_path);
+      
+      // 백엔드 응답 형식 변환: {domain_key: {annual_goal, semester_goal}} → {annual_domain_key_goal, semester_domain_key_goal}
       const recommendedGoals: GoalData = {};
       domains.forEach(domain => {
         const domainKey = DOMAIN_TO_KEY[domain];
-        if (domainKey) {
-          recommendedGoals[`annual_${domainKey}_goal`] = `[AI 추천] ${domain} 영역의 연간 학습 목표입니다.`;
-          recommendedGoals[`semester_${domainKey}_goal`] = `[AI 추천] ${domain} 영역의 학기 학습 목표입니다.`;
+        if (domainKey && goalContent[domainKey]) {
+          recommendedGoals[`annual_${domainKey}_goal`] = goalContent[domainKey].annual_goal || '';
+          recommendedGoals[`semester_${domainKey}_goal`] = goalContent[domainKey].semester_goal || '';
         }
       });
 
       setGoalData(recommendedGoals);
+      setGoalFile(createdFile);
       
-      // 자동 저장
+      // 자동 저장 (이미 백엔드에 저장되었지만, 프론트엔드 형식으로도 저장)
       await saveGoalData(recommendedGoals);
     } catch (err) {
       console.error('Error getting AI recommendations:', err);
@@ -263,54 +293,74 @@ const SyllabusPage: React.FC = () => {
     if (!iepVersionId || !selectedDomain) return;
 
     try {
-      // TODO: 백엔드 API 호출
-      // const response = await fetch('/api/ai/recommend-weekly-content', {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     studentInfo,
-      //     goals: goalData,
-      //     domain: DOMAIN_TO_KEY[selectedDomain],
-      //   }),
-      // });
-      // const recommended = await response.json();
+      // 학생 정보 파일 가져오기
+      const files = await getIEPFiles(iepVersionId);
+      const studentInfoFile = files.find(f => f.file_type === 'student_info');
+      
+      if (!studentInfoFile) {
+        alert('학생 정보 파일이 없습니다. 먼저 학생 정보를 저장해주세요.');
+        return;
+      }
 
+      // 학생 프로필 데이터 로드
+      const studentProfile = await getIEPFileContent(studentInfoFile.file_path);
+      
+      // 백엔드 API 호출: AI 주차별 학습 내용 추천
+      const formData = new FormData();
+      const studentProfileBlob = new Blob([JSON.stringify(studentProfile, null, 2)], { type: 'application/json' });
+      const studentProfileFile = new File([studentProfileBlob], 'student_info.json', { type: 'application/json' });
+      
+      formData.append('iep_version_id', iepVersionId);
+      formData.append('file_type', 'weekly_plan'); // 백엔드는 "weekly_plan" 사용
+      formData.append('file', studentProfileFile);
+
+      const response = await fetch(`${API_BASE_URL}/iep-files`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('AI 학습 내용 추천에 실패했습니다.');
+      }
+
+      const createdFile = await response.json();
+      
+      // 생성된 파일 내용 로드
+      const weeklyPlanContent = await getIEPFileContent(createdFile.file_path);
+      
+      // 백엔드 응답 형식 변환: {domain_key: [{week, content}, ...]} → {domain_key_weeklyContent: [content, ...]}
       const domainKey = DOMAIN_TO_KEY[selectedDomain];
       if (!domainKey) return;
 
       const weeklyKey = `${domainKey}_weeklyContent`;
       
-      // TODO: 백엔드 API 호출
-      // const response = await fetch('/api/ai/recommend-weekly-content', {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     studentInfo,
-      //     goals: goalData,
-      //     domain: domainKey,
-      //   }),
-      // });
-      // const recommendedContent = await response.json()[weeklyKey];
+      // 백엔드 응답이 {domain_key: [{week: 1, content: "..."}, ...]} 형식인 경우
+      let recommendedContent: string[] = [];
+      if (weeklyPlanContent[domainKey] && Array.isArray(weeklyPlanContent[domainKey])) {
+        // 주차별로 정렬하고 content만 추출
+        recommendedContent = weeklyPlanContent[domainKey]
+          .sort((a: any, b: any) => a.week - b.week)
+          .map((item: any) => item.content || '');
+      } else if (weeklyPlanContent[weeklyKey] && Array.isArray(weeklyPlanContent[weeklyKey])) {
+        // 이미 {domain_key_weeklyContent: [...]} 형식인 경우
+        recommendedContent = weeklyPlanContent[weeklyKey];
+      }
       
-      // TODO: 실제 API 응답 사용
-      // 임시 더미 데이터
-      const recommendedContent = Array(20).fill(`${selectedDomain} 영역의 교육 내용을 추천합니다.`);
+      // 20주차가 아니면 빈 문자열로 채움
+      while (recommendedContent.length < 20) {
+        recommendedContent.push('');
+      }
+      recommendedContent = recommendedContent.slice(0, 20);
       
       const updatedContent = { ...weeklyContent, [weeklyKey]: recommendedContent };
       setWeeklyContent(updatedContent);
+      setWeeklyContentFile(createdFile);
       
-      // 자동 저장
+      // 자동 저장 (이미 백엔드에 저장되었지만, 프론트엔드 형식으로도 저장)
       const jsonBlob = new Blob([JSON.stringify(updatedContent, null, 2)], { type: 'application/json' });
       const jsonFile = new File([jsonBlob], `weekly_content_${iepVersionId}.json`, { type: 'application/json' });
       
-      if (weeklyContentFile) {
-        await updateIEPFile(weeklyContentFile.id, { file: jsonFile });
-      } else {
-        const newFile = await createIEPFile({
-          iep_version_id: iepVersionId,
-          file_type: 'weekly_content',
-          file: jsonFile,
-        });
-        setWeeklyContentFile(newFile);
-      }
+      await updateIEPFile(createdFile.id, { file: jsonFile });
     } catch (err) {
       console.error('Error getting AI recommendations:', err);
       alert('AI 추천을 가져오는데 실패했습니다.');
@@ -324,60 +374,68 @@ const SyllabusPage: React.FC = () => {
     if (!iepVersionId || !selectedDomain) return;
 
     try {
-      // TODO: 백엔드 API 호출
-      // const response = await fetch('/api/ai/recommend-weekly-material', {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     studentInfo,
-      //     goals: goalData,
-      //     domain: DOMAIN_TO_KEY[selectedDomain],
-      //     content: weeklyContent[`${DOMAIN_TO_KEY[selectedDomain]}_weeklyContent`],
-      //   }),
-      // });
-      // const recommended = await response.json();
+      // 주차별 학습 내용 파일이 필요함 (교육자료 추천을 위해)
+      if (!weeklyContentFile) {
+        alert('먼저 주차별 학습 내용을 생성해주세요.');
+        return;
+      }
 
+      // 주차별 학습 내용 로드
+      const weeklyContentData = await getIEPFileContent(weeklyContentFile.file_path);
+      
+      // 백엔드 API 호출: AI 주차별 교육자료 추천
+      const formData = new FormData();
+      const weeklyContentBlob = new Blob([JSON.stringify(weeklyContentData, null, 2)], { type: 'application/json' });
+      const weeklyContentFileForAPI = new File([weeklyContentBlob], 'weekly_content.json', { type: 'application/json' });
+      
+      formData.append('iep_version_id', iepVersionId);
+      formData.append('file_type', 'weekly_materials'); // 백엔드는 "weekly_materials" 사용
+      formData.append('file', weeklyContentFileForAPI);
+
+      const response = await fetch(`${API_BASE_URL}/iep-files`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('AI 교육자료 추천에 실패했습니다.');
+      }
+
+      const createdFile = await response.json();
+      
+      // 생성된 파일 내용 로드
+      const weeklyMaterialsContent = await getIEPFileContent(createdFile.file_path);
+      
+      // 백엔드 응답 형식 변환
       const domainKey = DOMAIN_TO_KEY[selectedDomain];
       if (!domainKey) return;
 
       const materialKey = `${domainKey}_weekly_material`;
-      const contentKey = `${domainKey}_weeklyContent`;
-      const currentContent = weeklyContent[contentKey] || [];
       
-      // TODO: 백엔드 API 호출
-      // const response = await fetch('/api/ai/recommend-weekly-material', {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     studentInfo,
-      //     goals: goalData,
-      //     domain: domainKey,
-      //     content: currentContent,
-      //   }),
-      // });
-      // const recommendedMaterial = await response.json()[materialKey];
+      // 백엔드 응답이 {domain_key_weekly_material: [{week: 1, material_url: "..."}, ...]} 형식인 경우
+      let recommendedMaterial: string[] = [];
+      if (weeklyMaterialsContent[materialKey] && Array.isArray(weeklyMaterialsContent[materialKey])) {
+        // 주차별로 정렬하고 material_url만 추출
+        recommendedMaterial = weeklyMaterialsContent[materialKey]
+          .sort((a: any, b: any) => a.week - b.week)
+          .map((item: any) => item.material_url || '');
+      }
       
-      // TODO: 실제 API 응답 사용
-      // 교육 내용이 있는 주차만 교육자료 추천
-      const recommendedMaterial = currentContent.map((content) => 
-        content ? `${selectedDomain} 영역의 교육자료를 추천합니다.` : ''
-      );
+      // 20주차가 아니면 빈 문자열로 채움
+      while (recommendedMaterial.length < 20) {
+        recommendedMaterial.push('');
+      }
+      recommendedMaterial = recommendedMaterial.slice(0, 20);
       
       const updatedMaterial = { ...weeklyMaterial, [materialKey]: recommendedMaterial };
       setWeeklyMaterial(updatedMaterial);
+      setWeeklyMaterialFile(createdFile);
       
-      // 자동 저장
+      // 자동 저장 (이미 백엔드에 저장되었지만, 프론트엔드 형식으로도 저장)
       const jsonBlob = new Blob([JSON.stringify(updatedMaterial, null, 2)], { type: 'application/json' });
       const jsonFile = new File([jsonBlob], `weekly_material_${iepVersionId}.json`, { type: 'application/json' });
       
-      if (weeklyMaterialFile) {
-        await updateIEPFile(weeklyMaterialFile.id, { file: jsonFile });
-      } else {
-        const newFile = await createIEPFile({
-          iep_version_id: iepVersionId,
-          file_type: 'weekly_material',
-          file: jsonFile,
-        });
-        setWeeklyMaterialFile(newFile);
-      }
+      await updateIEPFile(createdFile.id, { file: jsonFile });
     } catch (err) {
       console.error('Error getting AI recommendations:', err);
       alert('AI 추천을 가져오는데 실패했습니다.');
