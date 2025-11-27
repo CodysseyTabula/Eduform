@@ -9,6 +9,21 @@ import pytest
 from docx import Document
 
 
+def _create_all_iep_files(client, iep_version_id, student_profile):
+    """DOCX 생성 전에 3개 file_type 모두 준비"""
+    profile_json = json.dumps(student_profile, ensure_ascii=False).encode('utf-8')
+    for file_type in ["goals", "weekly_plan", "weekly_materials"]:
+        files = {
+            "file": ("student_profile.json", profile_json, "application/json")
+        }
+        data = {
+            "iep_version_id": str(iep_version_id),
+            "file_type": file_type
+        }
+        response = client.post("/iep-files", files=files, data=data)
+        assert response.status_code == 201
+
+
 @pytest.mark.integration
 def test_download_iep_docx(
     client,
@@ -25,17 +40,11 @@ def test_download_iep_docx(
     - Content-Type이 DOCX 형식
     - 다운로드된 파일이 유효한 DOCX
     """
-    # 1. IEP 파일 생성 (3개 JSON) - multipart/form-data
-    profile_json = json.dumps(sample_student_profile, ensure_ascii=False).encode('utf-8')
-    files = {
-        "file": ("student_profile.json", profile_json, "application/json")
-    }
-    data = {
-        "iep_version_id": str(sample_iep_version.id)
-    }
-    
-    create_response = client.post("/iep-files", files=files, data=data)
-    assert create_response.status_code == 201
+    _create_all_iep_files(
+        client,
+        sample_iep_version.id,
+        sample_student_profile
+    )
     
     # 2. DOCX 다운로드
     response = client.get(f"/iep-versions/{sample_iep_version.id}/docx")
@@ -80,17 +89,11 @@ def test_docx_content_structure(
     - IEP 메타데이터가 포함됨
     - 목표/학습계획/자료 섹션이 포함됨
     """
-    # 1. IEP 파일 생성 - multipart/form-data
-    profile_json = json.dumps(sample_student_profile, ensure_ascii=False).encode('utf-8')
-    files = {
-        "file": ("student_profile.json", profile_json, "application/json")
-    }
-    data = {
-        "iep_version_id": str(sample_iep_version.id)
-    }
-    
-    create_response = client.post("/iep-files", files=files, data=data)
-    assert create_response.status_code == 201
+    _create_all_iep_files(
+        client,
+        sample_iep_version.id,
+        sample_student_profile
+    )
     
     # 2. DOCX 다운로드
     response = client.get(f"/iep-versions/{sample_iep_version.id}/docx")

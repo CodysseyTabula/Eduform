@@ -23,7 +23,7 @@ from app.db.base import Base
 from app.models.student import Student
 from app.models.iep_version import IEPVersion
 from app.models.iep_file import IEPFile
-from app.services.ai_integration import create_iep_files_with_ai
+# create_iep_files_with_ai 함수는 제거됨 (file_type별로 1개씩 생성하는 방식으로 변경)
 
 
 # 테스트용 인메모리 DB 설정
@@ -80,81 +80,14 @@ def sample_student_profile():
 def test_import_modules():
     """모듈 임포트 테스트"""
     from app.api.iep_files import router
-    from app.services.ai_integration import create_iep_files_with_ai
     from app.schemas.iep_file import IEPFileCreateRequest
     from app.schemas.student_profile import StudentProfile
     
     assert router.prefix == "/iep-files"
-    assert callable(create_iep_files_with_ai)
 
 
-def test_create_iep_files_with_ai(db_session, sample_student_profile, tmp_path, monkeypatch):
-    """
-    AI 통합 서비스 - IEP 파일 생성 테스트
-    
-    검증 사항:
-    - AI 모듈 호출 성공
-    - 3개 JSON 파일 디스크 저장
-    - 3개 IEPFile 메타데이터 DB 저장
-    """
-    # 임시 storage_path 설정
-    storage_path = tmp_path / "storage"
-    storage_path.mkdir()
-    
-    # settings.storage_path를 임시 경로로 변경
-    from app.core import config
-    monkeypatch.setattr(config.settings, "storage_path", str(storage_path))
-    
-    # 1. 테스트용 Student, IEPVersion 생성
-    student = Student(
-        name="테스트학생",
-        birth=date(2010, 3, 15)
-    )
-    db_session.add(student)
-    db_session.commit()
-    db_session.refresh(student)
-    
-    iep_version = IEPVersion(
-        student_id=student.id,
-        year="2024",
-        semester="1학기",
-        grade="3"
-    )
-    db_session.add(iep_version)
-    db_session.commit()
-    db_session.refresh(iep_version)
-    
-    # 2. IEP 파일 생성 (AI 서비스 호출)
-    iep_files = create_iep_files_with_ai(
-        iep_version_id=iep_version.id,
-        student_profile=sample_student_profile,
-        db=db_session
-    )
-    
-    # 3. 검증: 3개 파일 레코드 생성 확인
-    assert len(iep_files) == 3
-    
-    file_types = {f.file_type for f in iep_files}
-    assert file_types == {"goals", "weekly_plan", "weekly_materials"}
-    
-    # 4. 검증: DB에 3개 레코드 저장 확인
-    db_records = db_session.query(IEPFile).filter(
-        IEPFile.iep_version_id == iep_version.id
-    ).all()
-    assert len(db_records) == 3
-    
-    # 5. 검증: 디스크에 파일 저장 확인
-    for iep_file in iep_files:
-        assert os.path.exists(iep_file.file_path), f"파일이 존재하지 않습니다: {iep_file.file_path}"
-        
-        # JSON 파일 읽기
-        with open(iep_file.file_path, 'r', encoding='utf-8') as f:
-            content = json.load(f)
-        
-        assert isinstance(content, dict), "JSON 컨텐츠는 dict 타입이어야 합니다"
-        assert len(content) > 0, "JSON 컨텐츠가 비어있습니다"
-    
-    print("✅ 통합 테스트 통과: IEP 파일 생성 성공")
+# test_create_iep_files_with_ai 함수는 제거됨
+# 현재는 file_type별로 1개씩 생성하는 방식이므로 API 엔드포인트 테스트로 대체됨
 
 
 def test_student_profile_schema():

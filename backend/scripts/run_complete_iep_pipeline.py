@@ -20,6 +20,7 @@ import json
 import time
 import uuid
 import subprocess
+import shutil
 from pathlib import Path
 from typing import Dict, Any, List
 
@@ -466,6 +467,13 @@ def main():
         print(f"  ✓ DOCX 파일 생성 완료: {docx_path}")
         print(f"  ✓ 파일 크기: {docx_file.stat().st_size:,} bytes")
         print(f"  ✓ 문서 단락 수: {len(loaded_doc.paragraphs)}개")
+        
+        # test_output에도 복사
+        test_output_dir = backend_dir / "test_output"
+        test_output_dir.mkdir(parents=True, exist_ok=True)
+        test_output_path = test_output_dir / docx_file.name
+        shutil.copy2(docx_path, test_output_path)
+        print(f"  ✓ test_output에도 저장 완료: {test_output_path}")
         print()
         
         # 완료 메시지
@@ -479,6 +487,7 @@ def main():
         if weekly_materials_data:
             print(f"  ✓ {weekly_materials_path}")
         print(f"  ✓ {docx_path}")
+        print(f"  ✓ {test_output_path} (test_output 복사본)")
         print()
         
         return True
