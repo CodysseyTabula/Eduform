@@ -21,7 +21,9 @@
 .iep-list-main {
   flex: 1;
   padding: 2rem;
-  overflow-x: auto;
+  overflow-x: hidden;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .iep-actions {
@@ -37,6 +39,8 @@
 
 .iep-form {
   max-width: 1200px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .iep-section {
@@ -70,6 +74,9 @@
   flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .iep-field-label {
