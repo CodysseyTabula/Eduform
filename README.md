@@ -81,14 +81,7 @@ React 기반의 직관적인 웹 인터페이스를 제공합니다. 별도의 A
 
 # 2. 전체 스택 실행
 docker compose up --build
-
-# 3. 서비스 접속
-# - 백엔드 API: http://localhost:8000
-# - API 문서: http://localhost:8000/docs
-# - 프론트엔드: http://localhost:5173
 ```
-
-상세한 설치 및 개발 가이드는 각 서브 프로젝트의 README를 참조하세요.
 
 ## 📂 프로젝트 구조
 
