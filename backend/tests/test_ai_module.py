@@ -178,3 +178,4 @@ def test_generate_goals_mixed_domains():
     assert "numbersOperations" in result
     assert len(result) == 2
 
+

@@ -554,6 +554,14 @@ const IEPList: React.FC = () => {
     return [];
   };
 
+  // 도메인 라벨을 option id로 변환하는 함수
+  const getDomainIdsFromLabels = (subject: string, labels: string[]): string[] => {
+    const options = getDomainOptions(subject);
+    return options
+      .filter(opt => labels.includes(opt.label))
+      .map(opt => opt.id);
+  };
+
   // 교육계획 버튼 활성화 조건 체크
   const canNavigateToSyllabus = (subject: string): boolean => {
     // 1. 저장하기 버튼을 눌러서 저장이 완료되어야 함
@@ -954,6 +962,10 @@ const IEPList: React.FC = () => {
                       <label className="iep-field-label">학습 영역</label>
                       <CheckboxGroup
                         options={getDomainOptions(subject1)}
+                        defaultSelectedIds={getDomainIdsFromLabels(
+                          subject1,
+                          subject1 === '국어' ? koreanDomains : mathDomains
+                        )}
                         onSelectionChange={(selectedIds) => {
                           const domains = getDomainOptions(subject1)
                             .filter(opt => selectedIds.includes(opt.id))
@@ -1016,6 +1028,10 @@ const IEPList: React.FC = () => {
                       <label className="iep-field-label">학습 영역</label>
                       <CheckboxGroup
                         options={getDomainOptions(subject2)}
+                        defaultSelectedIds={getDomainIdsFromLabels(
+                          subject2,
+                          subject2 === '국어' ? koreanDomains : mathDomains
+                        )}
                         onSelectionChange={(selectedIds) => {
                           const domains = getDomainOptions(subject2)
                             .filter(opt => selectedIds.includes(opt.id))

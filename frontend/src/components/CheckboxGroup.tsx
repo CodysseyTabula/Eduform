@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './CheckboxGroup.css';
 
 interface CheckboxOption {
@@ -10,14 +10,21 @@ interface CheckboxGroupProps {
   options: CheckboxOption[];
   onSelectionChange?: (selectedIds: string[]) => void;
   className?: string;
+  defaultSelectedIds?: string[];
 }
 
 const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
   options,
   onSelectionChange,
-  className
+  className,
+  defaultSelectedIds = []
 }) => {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>(defaultSelectedIds);
+
+  // defaultSelectedIds가 변경되면 selectedIds 업데이트
+  useEffect(() => {
+    setSelectedIds(defaultSelectedIds);
+  }, [defaultSelectedIds]);
 
   const handleToggle = (id: string) => {
     const newSelectedIds = selectedIds.includes(id)

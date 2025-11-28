@@ -81,6 +81,42 @@
   font-size: 14px !important;
 }
 
+.ai-button-small:disabled,
+.ai-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+  position: relative;
+  pointer-events: none;
+}
+
+.ai-button-small:disabled .button-text,
+.ai-button:disabled .button-text {
+  position: relative;
+  padding-right: 1.5rem;
+}
+
+.ai-button-small:disabled .button-text::after,
+.ai-button:disabled .button-text::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-white);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-left: 0.5rem;
+}
+
+@keyframes spin {
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
 .ai-button .button-text,
 .ai-button-small .button-text {
   font-size: 16px !important;
@@ -266,6 +302,23 @@
   transform: translateY(-50%);
 }
 
+.ai-button-with-progress {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progress-star {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 /* 데이터 행 - 주차 번호 */
 .plan-week-number {
   background-color: var(--color-secondary);
@@ -328,6 +381,22 @@
 
 .material-link:visited {
   color: var(--color-primary);
+}
+
+.material-with-thumbnail {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.material-thumbnail {
+  width: 60px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-primary);
+  background-color: var(--color-tertiary);
 }
 
 /* 하단 버튼 */
