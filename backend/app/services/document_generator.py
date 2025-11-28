@@ -114,11 +114,11 @@ def generate_docx_for_iep(
         # 연간/학기 목표 섹션
         _add_goals_section(doc, goals_data)
         
-        # 주차별 학습 계획 섹션
-        _add_weekly_plan_section(doc, weekly_plan_data)
+        # 주차별 학습 계획 섹션 (선택된 도메인만 출력)
+        _add_weekly_plan_section(doc, weekly_plan_data, student_info_data)
         
-        # 주차별 학습 자료 섹션
-        _add_weekly_materials_section(doc, weekly_materials_data)
+        # 주차별 학습 자료 섹션 (선택된 도메인만 출력)
+        _add_weekly_materials_section(doc, weekly_materials_data, student_info_data)
         
         # 5. 파일 저장
         if not output_path:
@@ -201,11 +201,11 @@ def generate_docx_stream(db: Session, iep_version_id: UUID) -> BytesIO:
         # 연간/학기 목표 섹션
         _add_goals_section(doc, goals_data)
         
-        # 주차별 학습 계획 섹션
-        _add_weekly_plan_section(doc, weekly_plan_data)
+        # 주차별 학습 계획 섹션 (선택된 도메인만 출력)
+        _add_weekly_plan_section(doc, weekly_plan_data, student_info_data)
         
-        # 주차별 학습 자료 섹션
-        _add_weekly_materials_section(doc, weekly_materials_data)
+        # 주차별 학습 자료 섹션 (선택된 도메인만 출력)
+        _add_weekly_materials_section(doc, weekly_materials_data, student_info_data)
         
         # 5. 메모리 스트림에 저장
         stream = BytesIO()
@@ -262,35 +262,45 @@ def _add_goals_section(doc: Document, goals_data: dict[str, Any]) -> None:
         "dataAndProbability": "수학 - 자료와 가능성",
     }
     
+    has_any_goals = False
+    
     # 선택된 도메인만 출력
+    # 실제 저장 형식: {annual_{domainKey}_goal: "...", semester_{domainKey}_goal: "..."}
     for domain_key, domain_name in domain_names.items():
-        if domain_key in goals_data:
-            domain_goals = goals_data[domain_key]
+        annual_key = f"annual_{domain_key}_goal"
+        semester_key = f"semester_{domain_key}_goal"
+        
+        annual_goal = goals_data.get(annual_key, '')
+        semester_goal = goals_data.get(semester_key, '')
+        
+        # 목표가 하나라도 있으면 출력
+        if annual_goal or semester_goal:
+            has_any_goals = True
             
             # 도메인별 소제목
             doc.add_heading(domain_name, level=3)
             
             # 연간 목표
-            if isinstance(domain_goals, dict) and "annual_goal" in domain_goals:
+            if annual_goal:
                 doc.add_paragraph(
-                    f"📌 연간 목표: {domain_goals['annual_goal']}",
+                    f"📌 연간 목표: {annual_goal}",
                     style='List Bullet'
                 )
             
             # 학기 목표
-            if isinstance(domain_goals, dict) and "semester_goal" in domain_goals:
+            if semester_goal:
                 doc.add_paragraph(
-                    f"🎯 학기 목표: {domain_goals['semester_goal']}",
+                    f"🎯 학기 목표: {semester_goal}",
                     style='List Bullet'
                 )
             
             doc.add_paragraph()  # 간격
     
-    if not any(key in goals_data for key in domain_names.keys()):
+    if not has_any_goals:
         doc.add_paragraph("⚠️ 목표 데이터가 없습니다.", style='Intense Quote')
 
 
-def _add_weekly_plan_section(doc: Document, weekly_plan_data: dict[str, Any]) -> None:
+def _add_weekly_plan_section(doc: Document, weekly_plan_data: dict[str, Any], student_info_data: dict[str, Any] | None = None) -> None:
     """주차별 학습 계획 섹션 추가"""
     doc.add_heading('2. 주차별 학습 계획 (20주)', level=2)
     
@@ -308,32 +318,66 @@ def _add_weekly_plan_section(doc: Document, weekly_plan_data: dict[str, Any]) ->
         "dataAndProbability": "수학 - 자료와 가능성",
     }
     
+    # 선택된 도메인 추출
+    selected_domains = set()
+    if student_info_data:
+        korean_domains = student_info_data.get("korean_domain", [])
+        math_domains = student_info_data.get("math_domain", [])
+        # 리스트인 경우 그대로 사용, 문자열인 경우 분리
+        if isinstance(korean_domains, str):
+            korean_domains = [d.strip() for d in korean_domains.split(",") if d.strip()]
+        if isinstance(math_domains, str):
+            math_domains = [d.strip() for d in math_domains.split(",") if d.strip()]
+        selected_domains.update(korean_domains)
+        selected_domains.update(math_domains)
+    
+    has_any_content = False
+    
     # 선택된 도메인만 출력
+    # 실제 저장 형식: {domainKey}_weeklyContent: string[] 또는 {domainKey}: [{week, content}]
     for domain_key, domain_name in domain_names.items():
-        if domain_key in weekly_plan_data:
-            weekly_content = weekly_plan_data[domain_key]
-            
-            # 도메인별 소제목
-            doc.add_heading(domain_name, level=3)
-            
-            # 주차별 내용 출력
-            if isinstance(weekly_content, list):
-                for item in weekly_content:
+        # 선택된 도메인만 처리 (선택된 도메인이 없으면 모든 도메인 처리 - 후방 호환)
+        if selected_domains and domain_key not in selected_domains:
+            continue
+        weekly_key = f"{domain_key}_weeklyContent"
+        weekly_content = weekly_plan_data.get(weekly_key)
+        
+        # 후방 호환: 도메인 키로 리스트가 있고 dict 항목을 가진 경우 content만 추출
+        if not weekly_content and domain_key in weekly_plan_data:
+            raw_list = weekly_plan_data.get(domain_key)
+            if isinstance(raw_list, list):
+                weekly_content = []
+                for item in raw_list:
                     if isinstance(item, dict):
-                        week = item.get('week', '?')
-                        content = item.get('content', '내용 없음')
+                        weekly_content.append(item.get("content", ""))
+                    elif isinstance(item, str):
+                        weekly_content.append(item)
+        
+        # 주차별 내용 출력
+        if weekly_content and isinstance(weekly_content, list) and len(weekly_content) > 0:
+            # 빈 문자열만 있는 경우 제외
+            non_empty_content = [c for c in weekly_content if c and str(c).strip()]
+            if non_empty_content:
+                has_any_content = True
+                
+                # 도메인별 소제목
+                doc.add_heading(domain_name, level=3)
+                
+                # 주차별 내용 출력 (1주차부터)
+                for week_idx, content in enumerate(weekly_content, start=1):
+                    if content and str(content).strip():
                         doc.add_paragraph(
-                            f"[{week}주차] {content}",
+                            f"[{week_idx}주차] {content}",
                             style='List Number'
                         )
-            
-            doc.add_paragraph()  # 간격
+                
+                doc.add_paragraph()  # 간격
     
-    if not any(key in weekly_plan_data for key in domain_names.keys()):
+    if not has_any_content:
         doc.add_paragraph("⚠️ 주차별 학습 계획 데이터가 없습니다.", style='Intense Quote')
 
 
-def _add_weekly_materials_section(doc: Document, weekly_materials_data: dict[str, Any]) -> None:
+def _add_weekly_materials_section(doc: Document, weekly_materials_data: dict[str, Any], student_info_data: dict[str, Any] | None = None) -> None:
     """주차별 학습 자료 섹션 추가"""
     doc.add_heading('3. 주차별 학습 자료', level=2)
     
@@ -351,28 +395,92 @@ def _add_weekly_materials_section(doc: Document, weekly_materials_data: dict[str
         "dataAndProbability": "수학 - 자료와 가능성",
     }
     
-    # 선택된 도메인만 출력
-    for domain_key, domain_name in domain_names.items():
-        if domain_key in weekly_materials_data:
-            materials_list = weekly_materials_data[domain_key]
-            
-            # 도메인별 소제목
-            doc.add_heading(domain_name, level=3)
-            
-            # 주차별 자료 출력
-            if isinstance(materials_list, list):
-                for item in materials_list:
-                    if isinstance(item, dict):
-                        week = item.get('week', '?')
-                        material_url = item.get('material_url', '링크 없음')
-                        doc.add_paragraph(
-                            f"[{week}주차] {material_url}",
-                            style='List Bullet 2'
-                        )
-            
-            doc.add_paragraph()  # 간격
+    # 선택된 도메인 추출
+    selected_domains = set()
+    if student_info_data:
+        korean_domains = student_info_data.get("korean_domain", [])
+        math_domains = student_info_data.get("math_domain", [])
+        # 리스트인 경우 그대로 사용, 문자열인 경우 분리
+        if isinstance(korean_domains, str):
+            korean_domains = [d.strip() for d in korean_domains.split(",") if d.strip()]
+        if isinstance(math_domains, str):
+            math_domains = [d.strip() for d in math_domains.split(",") if d.strip()]
+        selected_domains.update(korean_domains)
+        selected_domains.update(math_domains)
     
-    if not any(key in weekly_materials_data for key in domain_names.keys()):
+    has_any_materials = False
+    
+    # 선택된 도메인만 출력
+    # 실제 저장 형식: {domainKey}_weekly_material: [{title, reason, content_url, thumbnail_url}, ...]
+    # 또는 스펙 형식: [{week: number, materials: [{title, url, keywords, file_type}]}, ...]
+    for domain_key, domain_name in domain_names.items():
+        # 선택된 도메인만 처리 (선택된 도메인이 없으면 모든 도메인 처리 - 후방 호환)
+        if selected_domains and domain_key not in selected_domains:
+            continue
+        material_key = f"{domain_key}_weekly_material"
+        materials_list = weekly_materials_data.get(material_key)
+        
+        # 주차별 자료 출력
+        if materials_list and isinstance(materials_list, list) and len(materials_list) > 0:
+            # 빈 배열이 아닌지 확인
+            has_content = False
+            output_items = []
+            
+            for idx, item in enumerate(materials_list, start=1):
+                if isinstance(item, dict):
+                    # 스펙 형식: {week: number, materials: [{title, url, ...}]}
+                    if 'materials' in item and isinstance(item['materials'], list) and len(item['materials']) > 0:
+                        week = item.get('week', idx)  # week가 없으면 인덱스 사용
+                        material = item['materials'][0]  # 첫 번째 자료 사용
+                        url = material.get('url', material.get('content_url', '링크 없음'))
+                        title = material.get('title', '').strip()
+                        if url and url.strip():
+                            has_content = True
+                            if title:
+                                output_items.append((week, f"{title} - {url}"))
+                            else:
+                                # title이 없으면 URL만 출력
+                                output_items.append((week, url))
+                    # 예전 형식: {title, reason, content_url, thumbnail_url}
+                    elif 'content_url' in item or 'material_url' in item:
+                        url = item.get('content_url') or item.get('material_url', '링크 없음')
+                        title = item.get('title', '').strip()
+                        week = item.get('week', idx)  # week가 없으면 인덱스 사용
+                        if url and url.strip():
+                            has_content = True
+                            if title:
+                                output_items.append((week, f"{title} - {url}"))
+                            else:
+                                # title이 없으면 URL만 출력
+                                output_items.append((week, url))
+                    # 단순 URL 문자열 배열 형식
+                    elif 'url' in item:
+                        url = item.get('url', '')
+                        week = item.get('week', idx)  # week가 없으면 인덱스 사용
+                        if url and url.strip():
+                            has_content = True
+                            output_items.append((week, url))
+                # 문자열인 경우 (직접 URL)
+                elif isinstance(item, str) and item.strip():
+                    has_content = True
+                    output_items.append((idx, item))
+            
+            if has_content:
+                has_any_materials = True
+                
+                # 도메인별 소제목
+                doc.add_heading(domain_name, level=3)
+                
+                # 주차별 자료 출력
+                for week, material_info in output_items:
+                    doc.add_paragraph(
+                        f"[{week}주차] {material_info}",
+                        style='List Bullet 2'
+                    )
+                
+                doc.add_paragraph()  # 간격
+    
+    if not has_any_materials:
         doc.add_paragraph("⚠️ 학습 자료 데이터가 없습니다.", style='Intense Quote')
 
 
