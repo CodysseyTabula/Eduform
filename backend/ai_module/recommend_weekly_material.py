@@ -226,24 +226,20 @@ def generate_weekly_materials(
     openai_client,
     weekly_content: Dict
 ) -> WeeklyMaterialResult:
-    """모든 도메인과 주차에 대해 자료 추천 수행"""
+    """전달받은 도메인과 주차에 대해 자료 추천 수행 (전달받은 도메인만 처리)"""
     result = WeeklyMaterialResult()
 
-    # 모든 도메인 키 정의
-    all_domain_keys = [
-        "listeningSpeaking",
-        "reading",
-        "writing",
-        "grammar",
-        "literature",
-        "mediaLiteracy",
-        "numbersOperations",
-        "changeAndRelations",
-        "geometryMeasurement",
-        "dataAndProbability"
-    ]
+    # 전달받은 weekly_content의 키에서 도메인 추출
+    # 형식: {domain_key}_weeklyContent
+    domain_keys_to_process = []
+    for key in weekly_content.keys():
+        if key.endswith("_weeklyContent"):
+            # "reading_weeklyContent" -> "reading"
+            domain_key = key.replace("_weeklyContent", "")
+            domain_keys_to_process.append(domain_key)
 
-    for domain_key in all_domain_keys:
+    # 전달받은 도메인만 처리
+    for domain_key in domain_keys_to_process:
         content_key = f"{domain_key}_weeklyContent"
         material_key = f"{domain_key}_weekly_material"
 

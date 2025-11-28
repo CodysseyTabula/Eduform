@@ -39,6 +39,10 @@ interface WeeklyMaterial {
   [key: string]: string[]; // domain_weekly_material: string[]
 }
 
+interface WeeklyMaterialThumbnails {
+  [key: string]: (string | null)[]; // domain_weekly_material: (thumbnail_url | null)[]
+}
+
 const SyllabusPage: React.FC = () => {
   const { studentId, iepVersionId } = useParams<{ studentId: string; iepVersionId: string }>();
   const [searchParams] = useSearchParams();
@@ -60,6 +64,13 @@ const SyllabusPage: React.FC = () => {
   const [selectedDomain, setSelectedDomain] = useState<string>('');
   const [weeklyContent, setWeeklyContent] = useState<WeeklyContent>({});
   const [weeklyMaterial, setWeeklyMaterial] = useState<WeeklyMaterial>({});
+  const [weeklyMaterialThumbnails, setWeeklyMaterialThumbnails] = useState<WeeklyMaterialThumbnails>({});
+
+  // AI 로딩 상태
+  const [isAIGoalLoading, setIsAIGoalLoading] = useState(false);
+  const [isAIContentLoading, setIsAIContentLoading] = useState(false);
+  const [isAIMaterialLoading, setIsAIMaterialLoading] = useState(false);
+  const [materialProgress, setMaterialProgress] = useState(0); // 0-100 (퍼센트)
 
   // ---------------------------
   // 데이터 로드
@@ -115,6 +126,7 @@ const SyllabusPage: React.FC = () => {
         setGoalData({});
         setWeeklyContent({});
         setWeeklyMaterial({});
+        setWeeklyMaterialThumbnails({});
         setGoalFile(null);
         setWeeklyContentFile(null);
         setWeeklyMaterialFile(null);
@@ -147,12 +159,15 @@ const SyllabusPage: React.FC = () => {
       if (foundWeeklyContentFile) {
         setWeeklyContentFile(foundWeeklyContentFile);
         const weeklyContentData = foundWeeklyContentFile.file_content;
-        const weekly: WeeklyContent = {};
+        // 기존 파일의 모든 도메인 데이터를 유지 (현재 선택된 과목뿐만 아니라)
+        const weekly: WeeklyContent = { ...weeklyContentData };
+        // 현재 선택된 과목의 도메인만 업데이트 (없으면 빈 배열로 초기화)
         domainList.forEach((domain: string) => {
           const domainKey = DOMAIN_TO_KEY[domain];
           if (domainKey) {
-            const existingContent = weeklyContentData?.[`${domainKey}_weeklyContent`];
-            weekly[`${domainKey}_weeklyContent`] = existingContent && Array.isArray(existingContent) 
+            const weeklyKey = `${domainKey}_weeklyContent`;
+            const existingContent = weeklyContentData?.[weeklyKey];
+            weekly[weeklyKey] = existingContent && Array.isArray(existingContent) 
               ? existingContent 
               : Array(20).fill('');
           }
@@ -165,41 +180,51 @@ const SyllabusPage: React.FC = () => {
       if (foundWeeklyMaterialFile) {
         setWeeklyMaterialFile(foundWeeklyMaterialFile);
         const weeklyMaterialData = foundWeeklyMaterialFile.file_content;
+        // 기존 파일의 모든 도메인 데이터를 유지 (현재 선택된 과목뿐만 아니라)
+        // 단, 스펙 형식인 경우 문자열 배열로 변환해서 저장
         const material: WeeklyMaterial = {};
-        domainList.forEach((domain: string) => {
-          const domainKey = DOMAIN_TO_KEY[domain];
-          if (domainKey) {
-            const materialKey = `${domainKey}_weekly_material`;
-            const existingMaterial = weeklyMaterialData?.[materialKey];
-            
-            let materialArray: string[] = [];
+        
+        // 기존 파일의 모든 키를 순회하면서 변환
+        const thumbnails: WeeklyMaterialThumbnails = {};
+        if (weeklyMaterialData && typeof weeklyMaterialData === 'object') {
+          Object.keys(weeklyMaterialData).forEach((key) => {
+            const existingMaterial = weeklyMaterialData[key];
             
             if (existingMaterial && Array.isArray(existingMaterial)) {
-              // 백엔드가 스펙 형식으로 저장한 경우: [{week: number, materials: [{title, url, ...}]}, ...]
+              let materialArray: string[] = [];
+              let thumbnailArray: (string | null)[] = [];
+              
+              // 백엔드가 스펙 형식으로 저장한 경우: [{week: number, materials: [{title, url, thumbnail_url, ...}]}, ...]
               if (existingMaterial.length > 0 && existingMaterial[0] && typeof existingMaterial[0] === 'object' && 'materials' in existingMaterial[0]) {
                 // 스펙 형식: 주차별로 정렬하고 materials[0].title과 url 추출
-                materialArray = existingMaterial
-                  .sort((a: any, b: any) => (a.week || 0) - (b.week || 0))
-                  .map((item: any) => {
-                    if (item.materials && Array.isArray(item.materials) && item.materials.length > 0) {
-                      const material = item.materials[0];
-                      const title = material.title || '';
-                      const url = material.url || '';
-                      
-                      // title이 있으면 "제목 - URL" 형식으로, 없으면 URL만 표시
-                      if (title && url) {
-                        return `${title} - ${url}`;
-                      } else if (title) {
-                        return title;
-                      } else if (url) {
-                        return url;
-                      }
+                const sorted = existingMaterial.sort((a: any, b: any) => (a.week || 0) - (b.week || 0));
+                materialArray = sorted.map((item: any) => {
+                  if (item.materials && Array.isArray(item.materials) && item.materials.length > 0) {
+                    const material = item.materials[0];
+                    const title = material.title || '';
+                    const url = material.url || '';
+                    
+                    // 썸네일 URL 추출
+                    const thumbnailUrl = material.thumbnail_url || null;
+                    thumbnailArray.push(thumbnailUrl);
+                    
+                    // title이 있으면 "제목 - URL" 형식으로, 없으면 URL만 표시
+                    if (title && url) {
+                      return `${title} - ${url}`;
+                    } else if (title) {
+                      return title;
+                    } else if (url) {
+                      return url;
                     }
-                    return '';
-                  });
+                  } else {
+                    thumbnailArray.push(null);
+                  }
+                  return '';
+                });
               } else {
                 // 이미 문자열 배열 형식인 경우
                 materialArray = existingMaterial.map((item: any) => {
+                  thumbnailArray.push(null); // 문자열 형식에는 썸네일 없음
                   if (typeof item === 'string') {
                     return item;
                   }
@@ -207,18 +232,37 @@ const SyllabusPage: React.FC = () => {
                   return item.url || item.content_url || item.material_url || '';
                 });
               }
+              
+              // 20주차가 아니면 빈 문자열로 채움
+              while (materialArray.length < 20) {
+                materialArray.push('');
+                thumbnailArray.push(null);
+              }
+              materialArray = materialArray.slice(0, 20);
+              thumbnailArray = thumbnailArray.slice(0, 20);
+              
+              material[key] = materialArray;
+              thumbnails[key] = thumbnailArray;
             }
-            
-            // 20주차가 아니면 빈 문자열로 채움
-            while (materialArray.length < 20) {
-              materialArray.push('');
+          });
+        }
+        
+        // 현재 선택된 과목의 도메인만 업데이트 (없으면 빈 배열로 초기화)
+        domainList.forEach((domain: string) => {
+          const domainKey = DOMAIN_TO_KEY[domain];
+          if (domainKey) {
+            const materialKey = `${domainKey}_weekly_material`;
+            if (!material[materialKey]) {
+              material[materialKey] = Array(20).fill('');
             }
-            materialArray = materialArray.slice(0, 20);
-            
-            material[materialKey] = materialArray;
+            if (!thumbnails[materialKey]) {
+              thumbnails[materialKey] = Array(20).fill(null);
+            }
           }
         });
+        
         setWeeklyMaterial(material);
+        setWeeklyMaterialThumbnails(thumbnails);
       }
     } catch (err) {
       console.error('Error loading data:', err);
@@ -228,6 +272,7 @@ const SyllabusPage: React.FC = () => {
       setGoalData({});
       setWeeklyContent({});
       setWeeklyMaterial({});
+      setWeeklyMaterialThumbnails({});
     }
   };
 
@@ -240,6 +285,7 @@ const SyllabusPage: React.FC = () => {
       return;
     }
 
+    setIsAIGoalLoading(true);
     try {
       // 학생 정보 파일 가져오기
       const files = await getIEPFiles(iepVersionId);
@@ -298,6 +344,8 @@ const SyllabusPage: React.FC = () => {
       const errorMessage = err instanceof Error ? err.message : 'AI 추천을 가져오는데 실패했습니다.';
       console.error('Full error:', err);
       alert(`AI 추천 실패: ${errorMessage}`);
+    } finally {
+      setIsAIGoalLoading(false);
     }
   };
 
@@ -342,6 +390,7 @@ const SyllabusPage: React.FC = () => {
   const handleAIContentRecommend = async () => {
     if (!iepVersionId || !selectedDomain) return;
 
+    setIsAIContentLoading(true);
     try {
       // 학생 정보 파일 가져오기
       const files = await getIEPFiles(iepVersionId);
@@ -414,6 +463,8 @@ const SyllabusPage: React.FC = () => {
     } catch (err) {
       console.error('Error getting AI recommendations:', err);
       alert('AI 추천을 가져오는데 실패했습니다.');
+    } finally {
+      setIsAIContentLoading(false);
     }
   };
 
@@ -423,9 +474,45 @@ const SyllabusPage: React.FC = () => {
   const handleAIMaterialRecommend = async () => {
     if (!iepVersionId || !selectedDomain) return;
 
+    setIsAIMaterialLoading(true);
+    setMaterialProgress(0);
+    
+    // 진행 상황 시뮬레이션 (20주차, 각 주차당 약 2-3초)
+    const totalWeeks = 20;
+    const estimatedTimePerWeek = 2500; // 2.5초 (밀리초)
+    const totalEstimatedTime = totalWeeks * estimatedTimePerWeek;
+    const progressInterval = 100; // 100ms마다 업데이트
+    const progressPerInterval = (progressInterval / totalEstimatedTime) * 100;
+    
+    let progressTimer: NodeJS.Timeout | null = null;
+    
+    // 진행 상황 업데이트 함수
+    const updateProgress = () => {
+      setMaterialProgress((prev: number) => {
+        const newProgress = prev + progressPerInterval;
+        if (newProgress >= 99) {
+          // 99%까지만 자동으로 채우고, 완료 시 100%로 설정
+          if (progressTimer) {
+            clearInterval(progressTimer);
+            progressTimer = null;
+          }
+          return 99;
+        }
+        return newProgress;
+      });
+    };
+    
+    progressTimer = setInterval(updateProgress, progressInterval);
+    
     try {
       // 주차별 학습 내용 파일이 필요함 (교육자료 추천을 위해)
       if (!weeklyContentFile) {
+        if (progressTimer) {
+          clearInterval(progressTimer);
+          progressTimer = null;
+        }
+        setIsAIMaterialLoading(false);
+        setMaterialProgress(0);
         alert('먼저 주차별 학습 내용을 생성해주세요.');
         return;
       }
@@ -476,8 +563,7 @@ const SyllabusPage: React.FC = () => {
       }
       
       // 백엔드 API 호출: AI 주차별 교육자료 추천
-      // 백엔드로 전송할 데이터: weeklyContentFile.file_content (전체 weekly_content 데이터)
-      // 이 데이터에는 모든 도메인의 weeklyContent가 포함되어 있어야 함
+      // 선택된 도메인의 학습 내용만 전달 (다른 도메인은 처리하지 않도록)
       const formData = new FormData();
       
       // weeklyContentFile.file_content가 없으면 에러
@@ -485,11 +571,17 @@ const SyllabusPage: React.FC = () => {
         throw new Error('주차별 학습 내용 파일이 없습니다. 먼저 주차별 학습 내용을 생성해주세요.');
       }
       
-      const dataToSend = weeklyContentFile.file_content;
+      // 선택된 도메인의 학습 내용만 필터링해서 전달
+      const dataToSend: any = {};
+      
+      // 선택된 도메인의 학습 내용만 포함
+      if (weeklyContentList && Array.isArray(weeklyContentList) && weeklyContentList.length > 0) {
+        dataToSend[weeklyContentKey] = weeklyContentList;
+      }
       
       // 전송할 데이터 검증
-      if (!dataToSend || typeof dataToSend !== 'object') {
-        throw new Error('주차별 학습 내용 데이터 형식이 올바르지 않습니다.');
+      if (!dataToSend || typeof dataToSend !== 'object' || Object.keys(dataToSend).length === 0) {
+        throw new Error('선택된 도메인의 주차별 학습 내용 데이터가 없습니다.');
       }
       
       const weeklyContentBlob = new Blob([JSON.stringify(dataToSend, null, 2)], { type: 'application/json' });
@@ -541,47 +633,60 @@ const SyllabusPage: React.FC = () => {
       
       // 백엔드 응답 형식에 맞게 URL 추출
       let recommendedMaterial: string[] = [];
+      let recommendedThumbnails: (string | null)[] = [];
       
       // 백엔드 응답에서 해당 도메인의 자료 찾기
-      // 스펙 형식만 허용: {week: number, materials: [{title, url, keywords, file_type}]}
+      // 스펙 형식만 허용: {week: number, materials: [{title, url, keywords, file_type, thumbnail_url}]}
       if (!weeklyMaterialsContent || !weeklyMaterialsContent[materialKey] || !Array.isArray(weeklyMaterialsContent[materialKey])) {
         throw new Error(`백엔드 응답 형식 오류: ${materialKey} 데이터가 없거나 형식이 올바르지 않습니다.`);
       }
 
       // 주차별로 정렬하고 materials[0].title과 url 추출
-      recommendedMaterial = weeklyMaterialsContent[materialKey]
-        .sort((a: any, b: any) => (a.week || 0) - (b.week || 0))
-        .map((item: any) => {
-          // 스펙 형식만 허용: {week: number, materials: [{title, url, keywords, file_type}]}
-          if (!item || !item.materials || !Array.isArray(item.materials) || item.materials.length === 0) {
-            throw new Error(`백엔드 응답 형식 오류: week ${item?.week || 'unknown'}의 materials가 올바르지 않습니다.`);
-          }
-          const material = item.materials[0];
-          const title = material.title || '';
-          const url = material.url || '';
-          
-          // title이 있으면 "제목 - URL" 형식으로, 없으면 URL만 표시
-          if (title && url) {
-            return `${title} - ${url}`;
-          } else if (title) {
-            return title;
-          } else if (url) {
-            return url;
-          }
-          return '';
-        });
+      const sorted = weeklyMaterialsContent[materialKey].sort((a: any, b: any) => (a.week || 0) - (b.week || 0));
+      recommendedMaterial = sorted.map((item: any) => {
+        // 스펙 형식만 허용: {week: number, materials: [{title, url, keywords, file_type, thumbnail_url}]}
+        if (!item || !item.materials || !Array.isArray(item.materials) || item.materials.length === 0) {
+          throw new Error(`백엔드 응답 형식 오류: week ${item?.week || 'unknown'}의 materials가 올바르지 않습니다.`);
+        }
+        const material = item.materials[0];
+        const title = material.title || '';
+        const url = material.url || '';
+        const thumbnailUrl = material.thumbnail_url || null;
+        
+        // 썸네일 URL 저장
+        recommendedThumbnails.push(thumbnailUrl);
+        
+        // title이 있으면 "제목 - URL" 형식으로, 없으면 URL만 표시
+        if (title && url) {
+          return `${title} - ${url}`;
+        } else if (title) {
+          return title;
+        } else if (url) {
+          return url;
+        }
+        return '';
+      });
       
       // 20주차가 아니면 빈 문자열로 채움
       while (recommendedMaterial.length < 20) {
         recommendedMaterial.push('');
+        recommendedThumbnails.push(null);
       }
       recommendedMaterial = recommendedMaterial.slice(0, 20);
+      recommendedThumbnails = recommendedThumbnails.slice(0, 20);
       
       const updatedMaterial = { ...weeklyMaterial, [materialKey]: recommendedMaterial };
+      const updatedThumbnails = { ...weeklyMaterialThumbnails, [materialKey]: recommendedThumbnails };
       setWeeklyMaterial(updatedMaterial);
+      setWeeklyMaterialThumbnails(updatedThumbnails);
       setWeeklyMaterialFile(createdFile);
       
       // 백엔드에서 이미 올바른 형식으로 저장되었으므로 추가 저장 불필요
+      if (progressTimer) {
+        clearInterval(progressTimer);
+        progressTimer = null;
+      }
+      setMaterialProgress(100);
       alert('AI 교육자료 추천이 완료되었습니다.');
     } catch (err) {
       console.error('Error getting AI recommendations:', err);
@@ -589,6 +694,16 @@ const SyllabusPage: React.FC = () => {
       alert(`에러: ${errorMessage}`);
       // 에러 발생 시 여기서 종료 (추가 처리 없음)
       return;
+    } finally {
+      if (progressTimer) {
+        clearInterval(progressTimer);
+        progressTimer = null;
+      }
+      setIsAIMaterialLoading(false);
+      // 완료 후 약간의 딜레이를 두고 진행도 초기화
+      setTimeout(() => {
+        setMaterialProgress(0);
+      }, 500);
     }
   };
 
@@ -602,8 +717,66 @@ const SyllabusPage: React.FC = () => {
     }
 
     try {
+      // 기존 파일의 모든 도메인 데이터를 유지하면서 현재 state의 데이터를 병합
+      let contentToSave: WeeklyContent = {};
+      let materialToSave: WeeklyMaterial = {};
+      
+      // 기존 파일이 있으면 기존 데이터를 먼저 로드
+      if (weeklyContentFile && weeklyContentFile.file_content) {
+        contentToSave = { ...weeklyContentFile.file_content };
+      }
+      if (weeklyMaterialFile && weeklyMaterialFile.file_content) {
+        // 기존 material 파일의 스펙 형식을 문자열 배열로 변환
+        const existingMaterialData = weeklyMaterialFile.file_content;
+        Object.keys(existingMaterialData).forEach((key) => {
+          const existingMaterial = existingMaterialData[key];
+          if (existingMaterial && Array.isArray(existingMaterial)) {
+            let materialArray: string[] = [];
+            
+            if (existingMaterial.length > 0 && existingMaterial[0] && typeof existingMaterial[0] === 'object' && 'materials' in existingMaterial[0]) {
+              // 스펙 형식 변환
+              materialArray = existingMaterial
+                .sort((a: any, b: any) => (a.week || 0) - (b.week || 0))
+                .map((item: any) => {
+                  if (item.materials && Array.isArray(item.materials) && item.materials.length > 0) {
+                    const material = item.materials[0];
+                    const title = material.title || '';
+                    const url = material.url || '';
+                    if (title && url) {
+                      return `${title} - ${url}`;
+                    } else if (title) {
+                      return title;
+                    } else if (url) {
+                      return url;
+                    }
+                  }
+                  return '';
+                });
+            } else {
+              materialArray = existingMaterial.map((item: any) => {
+                if (typeof item === 'string') {
+                  return item;
+                }
+                return item.url || item.content_url || item.material_url || '';
+              });
+            }
+            
+            while (materialArray.length < 20) {
+              materialArray.push('');
+            }
+            materialArray = materialArray.slice(0, 20);
+            
+            materialToSave[key] = materialArray;
+          }
+        });
+      }
+      
+      // 현재 state의 데이터로 병합 (덮어쓰기)
+      contentToSave = { ...contentToSave, ...weeklyContent };
+      materialToSave = { ...materialToSave, ...weeklyMaterial };
+      
       // 주차별 학습 내용 저장
-      const contentJsonBlob = new Blob([JSON.stringify(weeklyContent, null, 2)], { type: 'application/json' });
+      const contentJsonBlob = new Blob([JSON.stringify(contentToSave, null, 2)], { type: 'application/json' });
       const contentJsonFile = new File([contentJsonBlob], `weekly_content_${iepVersionId}.json`, { type: 'application/json' });
       
       if (weeklyContentFile) {
@@ -618,7 +791,7 @@ const SyllabusPage: React.FC = () => {
       }
 
       // 주차별 교육자료 저장
-      const materialJsonBlob = new Blob([JSON.stringify(weeklyMaterial, null, 2)], { type: 'application/json' });
+      const materialJsonBlob = new Blob([JSON.stringify(materialToSave, null, 2)], { type: 'application/json' });
       const materialJsonFile = new File([materialJsonBlob], `weekly_material_${iepVersionId}.json`, { type: 'application/json' });
       
       if (weeklyMaterialFile) {
@@ -699,8 +872,9 @@ const SyllabusPage: React.FC = () => {
                 icon={<img src={starIcon} alt="AI" />}
                 onClick={handleAIGoalRecommend}
                 className="ai-button"
+                disabled={isAIGoalLoading}
               >
-                AI
+                {isAIGoalLoading ? 'AI 생성 중...' : 'AI'}
               </Button>
             </div>
           </div>
@@ -817,21 +991,52 @@ const SyllabusPage: React.FC = () => {
                           icon={<img src={starIcon} alt="AI" />}
                           onClick={handleAIContentRecommend}
                           className="ai-button-small"
+                          disabled={isAIContentLoading}
                         >
-                          AI
+                          {isAIContentLoading ? '생성 중...' : 'AI'}
                         </Button>
                       )}
                     </td>
                     <td className="plan-header-cell plan-material-header">
                       <span>교육자료</span>
                       {isEditingPlan && (
-                        <Button
-                          icon={<img src={starIcon} alt="AI" />}
-                          onClick={handleAIMaterialRecommend}
-                          className="ai-button-small"
-                        >
-                          AI
-                        </Button>
+                        <div className="ai-button-with-progress">
+                          <Button
+                            icon={<img src={starIcon} alt="AI" />}
+                            onClick={handleAIMaterialRecommend}
+                            className="ai-button-small"
+                            disabled={isAIMaterialLoading}
+                          >
+                            {isAIMaterialLoading ? '생성 중...' : 'AI'}
+                          </Button>
+                          {isAIMaterialLoading && (
+                            <div className="progress-star">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: 'translateX(1px)' }}>
+                                <defs>
+                                  <mask id={`starMask-${Math.floor(materialProgress)}`}>
+                                    <rect x="0" y="0" width="24" height="24" fill="black" />
+                                    <rect x="0" y="0" width={`${24 * (materialProgress / 100)}`} height="24" fill="white" />
+                                  </mask>
+                                </defs>
+                                {/* 빈 별 (빨강) */}
+                                <path
+                                  d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+                                  fill="#FF4444"
+                                  stroke="#000000"
+                                  strokeWidth="2"
+                                />
+                                {/* 채워진 별 (초록색) - 진행도에 따라 */}
+                                <path
+                                  d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+                                  fill="#4CAF50"
+                                  stroke="#000000"
+                                  strokeWidth="2"
+                                  mask={`url(#starMask-${Math.floor(materialProgress)})`}
+                                />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -876,12 +1081,24 @@ const SyllabusPage: React.FC = () => {
                           ) : (
                             (() => {
                               const { title, url } = parseMaterial(material);
+                              const thumbnailUrl = weeklyMaterialThumbnails[materialKey]?.[week - 1] || null;
                               if (!title && !url) {
                                 return <div className="plan-content-text">-</div>;
                               }
                               if (url) {
                                 return (
-                                  <div className="plan-content-text">
+                                  <div className="plan-content-text material-with-thumbnail">
+                                    {thumbnailUrl && (
+                                      <img 
+                                        src={thumbnailUrl} 
+                                        alt={title || '교육자료 썸네일'} 
+                                        className="material-thumbnail"
+                                        onError={(e) => {
+                                          // 썸네일 로드 실패 시 이미지 숨김
+                                          (e.target as HTMLImageElement).style.display = 'none';
+                                        }}
+                                      />
+                                    )}
                                     <a 
                                       href={url} 
                                       target="_blank" 
