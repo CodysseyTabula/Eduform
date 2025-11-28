@@ -109,6 +109,7 @@ class MaterialItem(BaseModel):
     url: str = Field(..., description="자료 URL")
     keywords: str = Field(default="", description="키워드")
     file_type: str = Field(default="", description="파일 타입")
+    thumbnail_url: str = Field(default="", description="썸네일 이미지 URL")
 
 
 class WeekMaterialItem(BaseModel):

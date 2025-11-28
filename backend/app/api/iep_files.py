@@ -315,11 +315,14 @@ async def create_iep_file(
                         # URL 추출
                         url = material.get("content_url", "") or material.get("url", "")
                         
+                        # 썸네일 URL 추출
+                        thumbnail_url = material.get("thumbnail_url", "") or ""
+                        
                         # 디버깅 로그
-                        logger.info(f"{domain_key} {week_idx}주차 - title: '{title}', url: '{url[:50] if url else '없음'}...'")
+                        logger.info(f"{domain_key} {week_idx}주차 - title: '{title}', url: '{url[:50] if url else '없음'}...', thumbnail: '{thumbnail_url[:50] if thumbnail_url else '없음'}...'")
                         
                         # 스펙에 맞는 형식으로 변환
-                        # MaterialItem: {title, url, keywords, file_type}
+                        # MaterialItem: {title, url, keywords, file_type, thumbnail_url}
                         # WeekMaterialItem: {week, materials: [MaterialItem]}
                         converted_item = {
                             "week": week_idx,
@@ -327,7 +330,8 @@ async def create_iep_file(
                                 "title": title,
                                 "url": url,  # content_url → url 변환
                                 "keywords": "",  # keywords는 현재 AI 모듈에서 제공하지 않으므로 빈 문자열
-                                "file_type": ""  # file_type도 현재 AI 모듈에서 제공하지 않으므로 빈 문자열
+                                "file_type": "",  # file_type도 현재 AI 모듈에서 제공하지 않으므로 빈 문자열
+                                "thumbnail_url": thumbnail_url  # 썸네일 URL 포함
                             }]
                         }
                         converted_list.append(converted_item)
