@@ -111,8 +111,8 @@ def generate_docx_for_iep(
         # IEP 메타데이터 섹션
         _add_metadata_section(doc, iep_version, student_info_data)
         
-        # 연간/학기 목표 섹션
-        _add_goals_section(doc, goals_data)
+        # 연간/학기 목표 섹션 (선택된 도메인만 출력)
+        _add_goals_section(doc, goals_data, student_info_data)
         
         # 주차별 학습 계획 섹션 (선택된 도메인만 출력)
         _add_weekly_plan_section(doc, weekly_plan_data, student_info_data)
@@ -198,8 +198,8 @@ def generate_docx_stream(db: Session, iep_version_id: UUID) -> BytesIO:
         # IEP 메타데이터 섹션
         _add_metadata_section(doc, iep_version, student_info_data)
         
-        # 연간/학기 목표 섹션
-        _add_goals_section(doc, goals_data)
+        # 연간/학기 목표 섹션 (선택된 도메인만 출력)
+        _add_goals_section(doc, goals_data, student_info_data)
         
         # 주차별 학습 계획 섹션 (선택된 도메인만 출력)
         _add_weekly_plan_section(doc, weekly_plan_data, student_info_data)
@@ -242,7 +242,7 @@ def _add_metadata_section(doc: Document, iep_version: IEPVersion, student_info: 
     doc.add_paragraph()  # 간격
 
 
-def _add_goals_section(doc: Document, goals_data: dict[str, Any]) -> None:
+def _add_goals_section(doc: Document, goals_data: dict[str, Any], student_info_data: dict[str, Any] | None = None) -> None:
     """연간/학기 목표 섹션 추가"""
     doc.add_heading('1. 교육 목표', level=2)
     
@@ -262,11 +262,28 @@ def _add_goals_section(doc: Document, goals_data: dict[str, Any]) -> None:
         "dataAndProbability": "수학 - 자료와 가능성",
     }
     
+    # 선택된 도메인 추출
+    selected_domains = set()
+    if student_info_data:
+        korean_domains = student_info_data.get("korean_domain", [])
+        math_domains = student_info_data.get("math_domain", [])
+        # 리스트인 경우 그대로 사용, 문자열인 경우 분리
+        if isinstance(korean_domains, str):
+            korean_domains = [d.strip() for d in korean_domains.split(",") if d.strip()]
+        if isinstance(math_domains, str):
+            math_domains = [d.strip() for d in math_domains.split(",") if d.strip()]
+        selected_domains.update(korean_domains)
+        selected_domains.update(math_domains)
+    
     has_any_goals = False
     
     # 선택된 도메인만 출력
     # 실제 저장 형식: {annual_{domainKey}_goal: "...", semester_{domainKey}_goal: "..."}
     for domain_key, domain_name in domain_names.items():
+        # 선택된 도메인만 처리 (선택된 도메인이 없으면 모든 도메인 처리 - 후방 호환)
+        if selected_domains and domain_key not in selected_domains:
+            continue
+            
         annual_key = f"annual_{domain_key}_goal"
         semester_key = f"semester_{domain_key}_goal"
         
