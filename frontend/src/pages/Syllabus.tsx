@@ -177,12 +177,23 @@ const SyllabusPage: React.FC = () => {
             if (existingMaterial && Array.isArray(existingMaterial)) {
               // 백엔드가 스펙 형식으로 저장한 경우: [{week: number, materials: [{title, url, ...}]}, ...]
               if (existingMaterial.length > 0 && existingMaterial[0] && typeof existingMaterial[0] === 'object' && 'materials' in existingMaterial[0]) {
-                // 스펙 형식: 주차별로 정렬하고 materials[0].url 추출
+                // 스펙 형식: 주차별로 정렬하고 materials[0].title과 url 추출
                 materialArray = existingMaterial
                   .sort((a: any, b: any) => (a.week || 0) - (b.week || 0))
                   .map((item: any) => {
                     if (item.materials && Array.isArray(item.materials) && item.materials.length > 0) {
-                      return item.materials[0].url || '';
+                      const material = item.materials[0];
+                      const title = material.title || '';
+                      const url = material.url || '';
+                      
+                      // title이 있으면 "제목 - URL" 형식으로, 없으면 URL만 표시
+                      if (title && url) {
+                        return `${title} - ${url}`;
+                      } else if (title) {
+                        return title;
+                      } else if (url) {
+                        return url;
+                      }
                     }
                     return '';
                   });
@@ -537,7 +548,7 @@ const SyllabusPage: React.FC = () => {
         throw new Error(`백엔드 응답 형식 오류: ${materialKey} 데이터가 없거나 형식이 올바르지 않습니다.`);
       }
 
-      // 주차별로 정렬하고 materials[0].url 추출
+      // 주차별로 정렬하고 materials[0].title과 url 추출
       recommendedMaterial = weeklyMaterialsContent[materialKey]
         .sort((a: any, b: any) => (a.week || 0) - (b.week || 0))
         .map((item: any) => {
@@ -545,11 +556,19 @@ const SyllabusPage: React.FC = () => {
           if (!item || !item.materials || !Array.isArray(item.materials) || item.materials.length === 0) {
             throw new Error(`백엔드 응답 형식 오류: week ${item?.week || 'unknown'}의 materials가 올바르지 않습니다.`);
           }
-          const url = item.materials[0].url;
-          if (!url || typeof url !== 'string') {
-            throw new Error(`백엔드 응답 형식 오류: week ${item.week}의 materials[0].url이 없거나 올바르지 않습니다.`);
+          const material = item.materials[0];
+          const title = material.title || '';
+          const url = material.url || '';
+          
+          // title이 있으면 "제목 - URL" 형식으로, 없으면 URL만 표시
+          if (title && url) {
+            return `${title} - ${url}`;
+          } else if (title) {
+            return title;
+          } else if (url) {
+            return url;
           }
-          return url;
+          return '';
         });
       
       // 20주차가 아니면 빈 문자열로 채움
@@ -624,6 +643,32 @@ const SyllabusPage: React.FC = () => {
   // 렌더링
   // ---------------------------
   const getDomainKey = (domain: string) => DOMAIN_TO_KEY[domain] || '';
+
+  // 교육자료 문자열에서 title과 url 파싱
+  const parseMaterial = (materialStr: string): { title: string; url: string | null } => {
+    if (!materialStr || !materialStr.trim()) {
+      return { title: '', url: null };
+    }
+    
+    // "제목 - URL" 형식인지 확인
+    const parts = materialStr.split(' - ');
+    if (parts.length >= 2) {
+      const title = parts.slice(0, -1).join(' - '); // 마지막 부분 전까지가 title
+      const url = parts[parts.length - 1]; // 마지막 부분이 URL
+      // URL 형식인지 확인 (http:// 또는 https://로 시작)
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return { title: title.trim(), url: url.trim() };
+      }
+    }
+    
+    // URL만 있는 경우 (http:// 또는 https://로 시작)
+    if (materialStr.startsWith('http://') || materialStr.startsWith('https://')) {
+      return { title: materialStr, url: materialStr };
+    }
+    
+    // title만 있는 경우
+    return { title: materialStr, url: null };
+  };
 
   return (
     <div className="syllabus-page">
@@ -829,7 +874,27 @@ const SyllabusPage: React.FC = () => {
                               }}
                             />
                           ) : (
-                            <div className="plan-content-text">{material || '-'}</div>
+                            (() => {
+                              const { title, url } = parseMaterial(material);
+                              if (!title && !url) {
+                                return <div className="plan-content-text">-</div>;
+                              }
+                              if (url) {
+                                return (
+                                  <div className="plan-content-text">
+                                    <a 
+                                      href={url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="material-link"
+                                    >
+                                      {title || url}
+                                    </a>
+                                  </div>
+                                );
+                              }
+                              return <div className="plan-content-text">{title}</div>;
+                            })()
                           )}
                         </td>
                       </tr>
