@@ -169,10 +169,53 @@ const SyllabusPage: React.FC = () => {
         domainList.forEach((domain: string) => {
           const domainKey = DOMAIN_TO_KEY[domain];
           if (domainKey) {
-            const existingMaterial = weeklyMaterialData?.[`${domainKey}_weekly_material`];
-            material[`${domainKey}_weekly_material`] = existingMaterial && Array.isArray(existingMaterial)
-              ? existingMaterial
-              : Array(20).fill('');
+            const materialKey = `${domainKey}_weekly_material`;
+            const existingMaterial = weeklyMaterialData?.[materialKey];
+            
+            let materialArray: string[] = [];
+            
+            if (existingMaterial && Array.isArray(existingMaterial)) {
+              // 백엔드가 스펙 형식으로 저장한 경우: [{week: number, materials: [{title, url, ...}]}, ...]
+              if (existingMaterial.length > 0 && existingMaterial[0] && typeof existingMaterial[0] === 'object' && 'materials' in existingMaterial[0]) {
+                // 스펙 형식: 주차별로 정렬하고 materials[0].title과 url 추출
+                materialArray = existingMaterial
+                  .sort((a: any, b: any) => (a.week || 0) - (b.week || 0))
+                  .map((item: any) => {
+                    if (item.materials && Array.isArray(item.materials) && item.materials.length > 0) {
+                      const material = item.materials[0];
+                      const title = material.title || '';
+                      const url = material.url || '';
+                      
+                      // title이 있으면 "제목 - URL" 형식으로, 없으면 URL만 표시
+                      if (title && url) {
+                        return `${title} - ${url}`;
+                      } else if (title) {
+                        return title;
+                      } else if (url) {
+                        return url;
+                      }
+                    }
+                    return '';
+                  });
+              } else {
+                // 이미 문자열 배열 형식인 경우
+                materialArray = existingMaterial.map((item: any) => {
+                  if (typeof item === 'string') {
+                    return item;
+                  }
+                  // 객체인 경우 URL 추출 시도
+                  return item.url || item.content_url || item.material_url || '';
+                });
+              }
+            }
+            
+            // 20주차가 아니면 빈 문자열로 채움
+            while (materialArray.length < 20) {
+              materialArray.push('');
+            }
+            materialArray = materialArray.slice(0, 20);
+            
+            material[materialKey] = materialArray;
           }
         });
         setWeeklyMaterial(material);
@@ -233,24 +276,28 @@ const SyllabusPage: React.FC = () => {
       // 생성된 파일 내용 로드
       const goalContent = createdFile.file_content;
       
-      // 백엔드 응답 형식 변환: {domain_key: {annual_goal, semester_goal}} → {annual_domain_key_goal, semester_domain_key_goal}
+      // 백엔드가 이미 변환해서 반환: {annual_{domain}_goal, semester_{domain}_goal} 형식
+      // 프론트엔드 형식에 맞게 그대로 사용
       const recommendedGoals: GoalData = {};
       domains.forEach(domain => {
         const domainKey = DOMAIN_TO_KEY[domain];
-        if (domainKey && goalContent[domainKey]) {
-          recommendedGoals[`annual_${domainKey}_goal`] = goalContent[domainKey].annual_goal || '';
-          recommendedGoals[`semester_${domainKey}_goal`] = goalContent[domainKey].semester_goal || '';
+        if (domainKey) {
+          // 백엔드가 이미 annual_{domainKey}_goal 형식으로 반환함
+          recommendedGoals[`annual_${domainKey}_goal`] = goalContent[`annual_${domainKey}_goal`] || '';
+          recommendedGoals[`semester_${domainKey}_goal`] = goalContent[`semester_${domainKey}_goal`] || '';
         }
       });
 
       setGoalData(recommendedGoals);
       setGoalFile(createdFile);
       
-      // 자동 저장 (이미 백엔드에 저장되었지만, 프론트엔드 형식으로도 저장)
-      await saveGoalData(recommendedGoals);
+      // 백엔드에서 이미 저장되었으므로 추가 저장 불필요
+      alert('AI 목표 추천이 완료되었습니다.');
     } catch (err) {
       console.error('Error getting AI recommendations:', err);
-      alert('AI 추천을 가져오는데 실패했습니다.');
+      const errorMessage = err instanceof Error ? err.message : 'AI 추천을 가져오는데 실패했습니다.';
+      console.error('Full error:', err);
+      alert(`AI 추천 실패: ${errorMessage}`);
     }
   };
 
@@ -384,12 +431,80 @@ const SyllabusPage: React.FC = () => {
       }
 
       // 주차별 학습 내용 로드
-      const weeklyContentData = weeklyContentFile.file_content;
+      // weeklyContentFile.file_content 또는 weeklyContent state에서 가져오기
+      const weeklyContentData = weeklyContentFile.file_content || {};
+      
+      // 선택된 도메인의 학습 내용이 있는지 확인
+      const domainKey = DOMAIN_TO_KEY[selectedDomain];
+      if (!domainKey) {
+        alert('도메인 정보를 찾을 수 없습니다.');
+        return;
+      }
+      
+      const weeklyContentKey = `${domainKey}_weeklyContent`;
+      
+      // 두 곳에서 확인: file_content와 state
+      const weeklyContentListFromFile = weeklyContentData?.[weeklyContentKey];
+      const weeklyContentListFromState = weeklyContent[weeklyContentKey];
+      const weeklyContentList = weeklyContentListFromFile || weeklyContentListFromState;
+      
+      // 디버깅: 데이터 확인
+      console.log('교육자료 추천 검증:', {
+        selectedDomain,
+        domainKey,
+        weeklyContentKey,
+        weeklyContentData,
+        weeklyContentListFromFile,
+        weeklyContentListFromState,
+        weeklyContentList,
+        isArray: Array.isArray(weeklyContentList),
+        length: weeklyContentList?.length,
+        firstItem: weeklyContentList?.[0],
+        hasContent: weeklyContentList && Array.isArray(weeklyContentList) && weeklyContentList.length > 0 && weeklyContentList.some((item: string) => item && typeof item === 'string' && item.trim().length > 0)
+      });
+      
+      // 학습 내용이 없거나 빈 배열인지 확인
+      // 배열이 있고, 길이가 0보다 크고, 실제 내용이 있는 항목이 하나라도 있어야 함
+      const hasValidContent = weeklyContentList && 
+                              Array.isArray(weeklyContentList) && 
+                              weeklyContentList.length > 0 && 
+                              weeklyContentList.some((item: string) => item && typeof item === 'string' && item.trim().length > 0);
+      
+      if (!hasValidContent) {
+        alert(`${selectedDomain} 도메인의 주차별 학습 내용이 없습니다. 먼저 해당 도메인의 학습 내용을 생성해주세요.`);
+        return;
+      }
       
       // 백엔드 API 호출: AI 주차별 교육자료 추천
+      // 백엔드로 전송할 데이터: weeklyContentFile.file_content (전체 weekly_content 데이터)
+      // 이 데이터에는 모든 도메인의 weeklyContent가 포함되어 있어야 함
       const formData = new FormData();
-      const weeklyContentBlob = new Blob([JSON.stringify(weeklyContentData, null, 2)], { type: 'application/json' });
+      
+      // weeklyContentFile.file_content가 없으면 에러
+      if (!weeklyContentFile || !weeklyContentFile.file_content) {
+        throw new Error('주차별 학습 내용 파일이 없습니다. 먼저 주차별 학습 내용을 생성해주세요.');
+      }
+      
+      const dataToSend = weeklyContentFile.file_content;
+      
+      // 전송할 데이터 검증
+      if (!dataToSend || typeof dataToSend !== 'object') {
+        throw new Error('주차별 학습 내용 데이터 형식이 올바르지 않습니다.');
+      }
+      
+      const weeklyContentBlob = new Blob([JSON.stringify(dataToSend, null, 2)], { type: 'application/json' });
       const weeklyContentFileForAPI = new File([weeklyContentBlob], 'weekly_content.json', { type: 'application/json' });
+      
+      // 디버깅: 전송할 데이터 확인
+      console.log('백엔드로 전송할 데이터:', {
+        dataToSend,
+        keys: Object.keys(dataToSend),
+        hasNumbersOperations: dataToSend?.numbersOperations_weeklyContent,
+        numbersOperationsLength: dataToSend?.numbersOperations_weeklyContent?.length,
+        numbersOperationsFirstItem: dataToSend?.numbersOperations_weeklyContent?.[0],
+        hasReading: dataToSend?.reading_weeklyContent,
+        readingLength: dataToSend?.reading_weeklyContent?.length
+      });
       
       formData.append('iep_version_id', iepVersionId);
       formData.append('file_type', 'weekly_material'); // 백엔드는 "weekly_material" 사용
@@ -401,7 +516,16 @@ const SyllabusPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('AI 교육자료 추천에 실패했습니다.');
+        // 에러 응답에서 상세 메시지 추출
+        let errorMessage = 'AI 교육자료 추천에 실패했습니다.';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        } catch {
+          // JSON 파싱 실패 시 기본 메시지 사용
+        }
+        alert(`에러: ${errorMessage}`);
+        throw new Error(errorMessage);
       }
 
       const createdFile = await response.json();
@@ -410,19 +534,42 @@ const SyllabusPage: React.FC = () => {
       const weeklyMaterialsContent = createdFile.file_content;
       
       // 백엔드 응답 형식 변환
-      const domainKey = DOMAIN_TO_KEY[selectedDomain];
-      if (!domainKey) return;
+      // 백엔드가 반환하는 형식: {domain_weekly_material: [{week: number, materials: [{title, url, keywords, file_type}]}, ...]}
+      // domainKey는 위에서 이미 선언됨
 
       const materialKey = `${domainKey}_weekly_material`;
       
-      // 백엔드 응답이 {domain_key_weekly_material: [{week: 1, material_url: "..."}, ...]} 형식인 경우
+      // 백엔드 응답 형식에 맞게 URL 추출
       let recommendedMaterial: string[] = [];
-      if (weeklyMaterialsContent[materialKey] && Array.isArray(weeklyMaterialsContent[materialKey])) {
-        // 주차별로 정렬하고 material_url만 추출
-        recommendedMaterial = weeklyMaterialsContent[materialKey]
-          .sort((a: any, b: any) => a.week - b.week)
-          .map((item: any) => item.material_url || '');
+      
+      // 백엔드 응답에서 해당 도메인의 자료 찾기
+      // 스펙 형식만 허용: {week: number, materials: [{title, url, keywords, file_type}]}
+      if (!weeklyMaterialsContent || !weeklyMaterialsContent[materialKey] || !Array.isArray(weeklyMaterialsContent[materialKey])) {
+        throw new Error(`백엔드 응답 형식 오류: ${materialKey} 데이터가 없거나 형식이 올바르지 않습니다.`);
       }
+
+      // 주차별로 정렬하고 materials[0].title과 url 추출
+      recommendedMaterial = weeklyMaterialsContent[materialKey]
+        .sort((a: any, b: any) => (a.week || 0) - (b.week || 0))
+        .map((item: any) => {
+          // 스펙 형식만 허용: {week: number, materials: [{title, url, keywords, file_type}]}
+          if (!item || !item.materials || !Array.isArray(item.materials) || item.materials.length === 0) {
+            throw new Error(`백엔드 응답 형식 오류: week ${item?.week || 'unknown'}의 materials가 올바르지 않습니다.`);
+          }
+          const material = item.materials[0];
+          const title = material.title || '';
+          const url = material.url || '';
+          
+          // title이 있으면 "제목 - URL" 형식으로, 없으면 URL만 표시
+          if (title && url) {
+            return `${title} - ${url}`;
+          } else if (title) {
+            return title;
+          } else if (url) {
+            return url;
+          }
+          return '';
+        });
       
       // 20주차가 아니면 빈 문자열로 채움
       while (recommendedMaterial.length < 20) {
@@ -434,14 +581,14 @@ const SyllabusPage: React.FC = () => {
       setWeeklyMaterial(updatedMaterial);
       setWeeklyMaterialFile(createdFile);
       
-      // 자동 저장 (이미 백엔드에 저장되었지만, 프론트엔드 형식으로도 저장)
-      const jsonBlob = new Blob([JSON.stringify(updatedMaterial, null, 2)], { type: 'application/json' });
-      const jsonFile = new File([jsonBlob], `weekly_material_${iepVersionId}.json`, { type: 'application/json' });
-      
-      await updateIEPFile(createdFile.id, { file: jsonFile });
+      // 백엔드에서 이미 올바른 형식으로 저장되었으므로 추가 저장 불필요
+      alert('AI 교육자료 추천이 완료되었습니다.');
     } catch (err) {
       console.error('Error getting AI recommendations:', err);
-      alert('AI 추천을 가져오는데 실패했습니다.');
+      const errorMessage = err instanceof Error ? err.message : 'AI 추천을 가져오는데 실패했습니다.';
+      alert(`에러: ${errorMessage}`);
+      // 에러 발생 시 여기서 종료 (추가 처리 없음)
+      return;
     }
   };
 
@@ -496,6 +643,32 @@ const SyllabusPage: React.FC = () => {
   // 렌더링
   // ---------------------------
   const getDomainKey = (domain: string) => DOMAIN_TO_KEY[domain] || '';
+
+  // 교육자료 문자열에서 title과 url 파싱
+  const parseMaterial = (materialStr: string): { title: string; url: string | null } => {
+    if (!materialStr || !materialStr.trim()) {
+      return { title: '', url: null };
+    }
+    
+    // "제목 - URL" 형식인지 확인
+    const parts = materialStr.split(' - ');
+    if (parts.length >= 2) {
+      const title = parts.slice(0, -1).join(' - '); // 마지막 부분 전까지가 title
+      const url = parts[parts.length - 1]; // 마지막 부분이 URL
+      // URL 형식인지 확인 (http:// 또는 https://로 시작)
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return { title: title.trim(), url: url.trim() };
+      }
+    }
+    
+    // URL만 있는 경우 (http:// 또는 https://로 시작)
+    if (materialStr.startsWith('http://') || materialStr.startsWith('https://')) {
+      return { title: materialStr, url: materialStr };
+    }
+    
+    // title만 있는 경우
+    return { title: materialStr, url: null };
+  };
 
   return (
     <div className="syllabus-page">
@@ -701,7 +874,27 @@ const SyllabusPage: React.FC = () => {
                               }}
                             />
                           ) : (
-                            <div className="plan-content-text">{material || '-'}</div>
+                            (() => {
+                              const { title, url } = parseMaterial(material);
+                              if (!title && !url) {
+                                return <div className="plan-content-text">-</div>;
+                              }
+                              if (url) {
+                                return (
+                                  <div className="plan-content-text">
+                                    <a 
+                                      href={url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="material-link"
+                                    >
+                                      {title || url}
+                                    </a>
+                                  </div>
+                                );
+                              }
+                              return <div className="plan-content-text">{title}</div>;
+                            })()
                           )}
                         </td>
                       </tr>

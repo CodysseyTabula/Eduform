@@ -314,6 +314,22 @@
   line-height: 1.5;
 }
 
+.material-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.material-link:hover {
+  color: var(--color-secondary);
+  text-decoration: underline;
+}
+
+.material-link:visited {
+  color: var(--color-primary);
+}
+
 /* 하단 버튼 */
 .syllabus-footer {
   margin-top: 3rem;

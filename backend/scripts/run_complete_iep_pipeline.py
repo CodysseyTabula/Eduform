@@ -150,6 +150,7 @@ def convert_weekly_content_to_docx_format(weekly_json: Dict) -> Dict[str, List[D
     docx_weekly = {}
     
     # weekly_content.json 형식: {"file_type": "weekly", "reading_weeklyContent": ["...", "..."]}
+    # 또는 LLM 출력형: {"reading": [{"week": 1, "content": "..."}], ...}
     # DOCX 형식: {"reading": [{"week": 1, "content": "..."}, ...]}
     
     for key, value in weekly_json.items():
@@ -168,6 +169,24 @@ def convert_weekly_content_to_docx_format(weekly_json: Dict) -> Dict[str, List[D
                 })
             
             docx_weekly[domain_key] = weekly_list
+        elif key in ALL_DOMAIN_MAPPING.values():
+            # 후방 호환: 도메인 키 자체가 있고 [{week, content}] 형식인 경우
+            weekly_list = []
+            for item in value:
+                if isinstance(item, dict):
+                    week = item.get("week")
+                    content = item.get("content", "")
+                    weekly_list.append({
+                        "week": week if week is not None else len(weekly_list) + 1,
+                        "content": content
+                    })
+                elif isinstance(item, str):
+                    weekly_list.append({
+                        "week": len(weekly_list) + 1,
+                        "content": item
+                    })
+            if weekly_list:
+                docx_weekly[key] = weekly_list
     
     return docx_weekly
 
@@ -177,7 +196,7 @@ def convert_materials_to_docx_format(materials_json: Dict) -> Dict[str, List[Dic
     docx_materials = {}
     
     # materials 형식: {"file_type": "material", "reading_weekly_material": [{"title": "...", "content_url": "..."}, ...]}
-    # DOCX 형식: {"reading": [{"week": 1, "material_url": "..."}, ...]}
+    # DOCX 형식: {"reading": [{"week": 1, "material_url": "...", "title": "..."}, ...]}
     
     for key, value in materials_json.items():
         if key == "file_type" or not isinstance(value, list):
@@ -189,10 +208,17 @@ def convert_materials_to_docx_format(materials_json: Dict) -> Dict[str, List[Dic
             # 주차별 데이터로 변환
             materials_list = []
             for week_idx, material in enumerate(value, 1):
-                material_url = material.get("content_url", "") if isinstance(material, dict) else ""
+                if isinstance(material, dict):
+                    material_url = material.get("content_url", "")
+                    material_title = material.get("title", "")
+                else:
+                    material_url = ""
+                    material_title = ""
+                
                 materials_list.append({
                     "week": week_idx,
-                    "material_url": material_url
+                    "material_url": material_url,
+                    "title": material_title
                 })
             
             docx_materials[domain_key] = materials_list
@@ -329,10 +355,19 @@ def generate_docx(goals_data: dict, weekly_plan_data: dict, weekly_materials_dat
                     if isinstance(item, dict):
                         week = item.get('week', '?')
                         material_url = item.get('material_url', '링크 없음')
-                        doc.add_paragraph(
-                            f"[{week}주차] {material_url}",
-                            style='List Bullet 2'
-                        )
+                        material_title = item.get('title', '')
+                        
+                        # 제목이 있으면 제목과 링크를 함께 표시, 없으면 링크만 표시
+                        if material_title:
+                            doc.add_paragraph(
+                                f"[{week}주차] {material_title} - {material_url}",
+                                style='List Bullet 2'
+                            )
+                        else:
+                            doc.add_paragraph(
+                                f"[{week}주차] {material_url}",
+                                style='List Bullet 2'
+                            )
             doc.add_paragraph()
     
     if not any(key in weekly_materials_data for key in domain_names.keys()):
@@ -541,4 +576,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n\n⚠️  사용자에 의해 중단되었습니다.")
         sys.exit(1)
-

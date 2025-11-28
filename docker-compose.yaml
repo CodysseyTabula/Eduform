@@ -43,6 +43,7 @@ services:
       - "${APP_PORT:-8000}:8000"
     volumes:
       - ./backend/app:/app/app
+      - ./backend/ai_module:/app/ai_module
       - ./backend/storage:/storage
     networks:
       - iep_network

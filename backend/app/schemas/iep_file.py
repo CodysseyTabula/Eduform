@@ -33,87 +33,110 @@ class IEPFileResponse(BaseModel):
 # Task 3.5: Goals JSON 스키마
 # ============================================================================
 
-class GoalItem(BaseModel):
-    """목표 항목 (연간 + 학기)"""
-    annual_goal: str = Field(..., description="연간 목표")
-    semester_goal: str = Field(..., description="학기 목표")
-
-
 class GoalsContent(BaseModel):
     """
-    Goals JSON 구조 (선택된 도메인만 포함)
+    Goals JSON 구조 (스펙에 맞는 형식)
+    
+    실제 저장 형식: {annual_{domain}_goal: str, semester_{domain}_goal: str}
+    선택된 도메인만 포함됨 (korean_domain, math_domain 배열에 따라 결정)
     
     국어 도메인: listeningSpeaking, reading, writing, grammar, literature, mediaLiteracy
     수학 도메인: numbersOperations, changeAndRelations, geometryMeasurement, dataAndProbability
     """
-    # 국어 도메인 (선택적)
-    listeningSpeaking: Optional[GoalItem] = None
-    reading: Optional[GoalItem] = None
-    writing: Optional[GoalItem] = None
-    grammar: Optional[GoalItem] = None
-    literature: Optional[GoalItem] = None
-    mediaLiteracy: Optional[GoalItem] = None
+    file_type: Literal["goal"] = "goal"
     
-    # 수학 도메인 (선택적)
-    numbersOperations: Optional[GoalItem] = None
-    changeAndRelations: Optional[GoalItem] = None
-    geometryMeasurement: Optional[GoalItem] = None
-    dataAndProbability: Optional[GoalItem] = None
+    # 국어 도메인 (선택적 - 선택된 도메인만 포함)
+    annual_listeningSpeaking_goal: Optional[str] = None
+    semester_listeningSpeaking_goal: Optional[str] = None
+    annual_reading_goal: Optional[str] = None
+    semester_reading_goal: Optional[str] = None
+    annual_writing_goal: Optional[str] = None
+    semester_writing_goal: Optional[str] = None
+    annual_grammar_goal: Optional[str] = None
+    semester_grammar_goal: Optional[str] = None
+    annual_literature_goal: Optional[str] = None
+    semester_literature_goal: Optional[str] = None
+    annual_mediaLiteracy_goal: Optional[str] = None
+    semester_mediaLiteracy_goal: Optional[str] = None
+    
+    # 수학 도메인 (선택적 - 선택된 도메인만 포함)
+    annual_numbersOperations_goal: Optional[str] = None
+    semester_numbersOperations_goal: Optional[str] = None
+    annual_changeAndRelations_goal: Optional[str] = None
+    semester_changeAndRelations_goal: Optional[str] = None
+    annual_geometryMeasurement_goal: Optional[str] = None
+    semester_geometryMeasurement_goal: Optional[str] = None
+    annual_dataAndProbability_goal: Optional[str] = None
+    semester_dataAndProbability_goal: Optional[str] = None
 
 
 # ============================================================================
 # Task 3.6: Weekly Plan JSON 스키마
 # ============================================================================
 
-class WeeklyContentItem(BaseModel):
-    """주차별 학습 내용 항목"""
-    week: int = Field(..., ge=1, le=20, description="주차 (1-20)")
-    content: str = Field(..., description="주차별 학습 내용")
-
-
 class WeeklyPlanContent(BaseModel):
     """
-    Weekly Plan JSON 구조 (선택된 도메인만 포함, 각 도메인 20주)
-    """
-    # 국어 도메인 (선택적)
-    listeningSpeaking: Optional[List[WeeklyContentItem]] = None
-    reading: Optional[List[WeeklyContentItem]] = None
-    writing: Optional[List[WeeklyContentItem]] = None
-    grammar: Optional[List[WeeklyContentItem]] = None
-    literature: Optional[List[WeeklyContentItem]] = None
-    mediaLiteracy: Optional[List[WeeklyContentItem]] = None
+    Weekly Plan JSON 구조 (스펙에 맞는 형식)
     
-    # 수학 도메인 (선택적)
-    numbersOperations: Optional[List[WeeklyContentItem]] = None
-    changeAndRelations: Optional[List[WeeklyContentItem]] = None
-    geometryMeasurement: Optional[List[WeeklyContentItem]] = None
-    dataAndProbability: Optional[List[WeeklyContentItem]] = None
+    실제 저장 형식: {domain}_weeklyContent: [string (20개)]
+    선택된 도메인만 포함됨 (korean_domain, math_domain 배열에 따라 결정)
+    각 배열은 정확히 20개의 문자열을 포함 (1주차부터 20주차까지)
+    """
+    file_type: Literal["weekly"] = "weekly"
+    
+    # 국어 도메인 (선택적 - 선택된 도메인만 포함, 각 20개 문자열 배열)
+    listeningSpeaking_weeklyContent: Optional[List[str]] = None
+    reading_weeklyContent: Optional[List[str]] = None
+    writing_weeklyContent: Optional[List[str]] = None
+    grammar_weeklyContent: Optional[List[str]] = None
+    literature_weeklyContent: Optional[List[str]] = None
+    mediaLiteracy_weeklyContent: Optional[List[str]] = None
+    
+    # 수학 도메인 (선택적 - 선택된 도메인만 포함, 각 20개 문자열 배열)
+    numbersOperations_weeklyContent: Optional[List[str]] = None
+    changeAndRelations_weeklyContent: Optional[List[str]] = None
+    geometryMeasurement_weeklyContent: Optional[List[str]] = None
+    dataAndProbability_weeklyContent: Optional[List[str]] = None
 
 
 # ============================================================================
 # Task 3.7: Weekly Materials JSON 스키마
 # ============================================================================
 
-class WeeklyMaterialItem(BaseModel):
+class MaterialItem(BaseModel):
+    """학습 자료 항목 (에듀넷 자료)"""
+    title: str = Field(..., description="자료 제목")
+    url: str = Field(..., description="자료 URL")
+    keywords: str = Field(default="", description="키워드")
+    file_type: str = Field(default="", description="파일 타입")
+
+
+class WeekMaterialItem(BaseModel):
     """주차별 학습 자료 항목"""
     week: int = Field(..., ge=1, le=20, description="주차 (1-20)")
-    material_url: str = Field(..., description="학습 자료 URL")
+    materials: List[MaterialItem] = Field(..., description="해당 주차의 학습 자료 리스트")
 
 
 class WeeklyMaterialsContent(BaseModel):
     """
-    Weekly Materials JSON 구조 (선택된 도메인만 포함, 각 도메인 20주)
-    """
-    # 국어 도메인 (선택적)
-    listeningSpeaking: Optional[List[WeeklyMaterialItem]] = None
-    reading: Optional[List[WeeklyMaterialItem]] = None
-    writing: Optional[List[WeeklyMaterialItem]] = None
-    grammar: Optional[List[WeeklyMaterialItem]] = None
-    literature: Optional[List[WeeklyMaterialItem]] = None
-    mediaLiteracy: Optional[List[WeeklyMaterialItem]] = None
+    Weekly Materials JSON 구조 (스펙에 맞는 형식)
     
-    # 수학 도메인 (선택적)
-    numbersOperations: Optional[List[WeeklyMaterialItem]] = None
-    changeAndRelations: Optional[List[WeeklyMaterialItem]] = None
-    geometryMeasurement: Optional[List[WeeklyMaterialItem]] = None
-    dataAndProbability: Optional[List[WeeklyMaterialItem]] = None
+    실제 저장 형식: {domain}_weekly_material: [{week: number, materials: [{title, url, keywords, file_type}]}]
+    선택된 도메인만 포함됨 (korean_domain, math_domain 배열에 따라 결정)
+    각 도메인은 20개의 WeekMaterialItem을 포함 (1주차부터 20주차까지)
+    """
+    file_type: Literal["material"] = "material"
+    
+    # 국어 도메인 (선택적 - 선택된 도메인만 포함, 각 20개 WeekMaterialItem 배열)
+    listeningSpeaking_weekly_material: Optional[List[WeekMaterialItem]] = None
+    reading_weekly_material: Optional[List[WeekMaterialItem]] = None
+    writing_weekly_material: Optional[List[WeekMaterialItem]] = None
+    grammar_weekly_material: Optional[List[WeekMaterialItem]] = None
+    literature_weekly_material: Optional[List[WeekMaterialItem]] = None
+    mediaLiteracy_weekly_material: Optional[List[WeekMaterialItem]] = None
+    
+    # 수학 도메인 (선택적 - 선택된 도메인만 포함, 각 20개 WeekMaterialItem 배열)
+    numbersOperations_weekly_material: Optional[List[WeekMaterialItem]] = None
+    changeAndRelations_weekly_material: Optional[List[WeekMaterialItem]] = None
+    geometryMeasurement_weekly_material: Optional[List[WeekMaterialItem]] = None
+    dataAndProbability_weekly_material: Optional[List[WeekMaterialItem]] = None
