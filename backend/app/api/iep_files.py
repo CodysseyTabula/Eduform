@@ -5,19 +5,19 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from typing import List
 from uuid import UUID
 
 import os
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
+from ai_module.pipeline import generate_goal_file_content, generate_weekly_content_file
 from app.db.session import get_db
 from app.models.iep_file import IEPFile
 from app.models.iep_version import IEPVersion
 from app.schemas.iep_file import IEPFileResponse
 from app.schemas.student_profile import StudentProfile
-from app.services.file_storage import save_json_file, load_json_file, FileStorageError
+from app.services.file_storage import save_json_file, FileStorageError
 
 router = APIRouter(prefix="/iep-files", tags=["IEP Files"])
 
@@ -93,11 +93,11 @@ async def create_iep_file(
     **프로세스:**
     1. multipart/form-data로 student_profile JSON 파일 수신
     2. IEP Version 존재 여부 검증
-    3. file_type에 따라 해당 AI 함수 호출
+    3. file_type에 따라 recommend_* 모듈 호출
        - "student_info" → 업로드된 프로필을 그대로 저장
-       - "goal" → generate_goals()
-       - "weekly_content" → generate_weekly_plan()
-       - "weekly_material" → generate_weekly_materials()
+       - "goal" → ai_module.recommend_goal 기반 목표 생성
+       - "weekly_content" → ai_module.recommend_weekly 기반 학습 내용 생성
+       - "weekly_material" → ai_module.recommend_weekly_material 기반 자료 추천
     4. 생성된 JSON을 디스크에 저장
     5. IEP_FILE 레코드 DB에 저장
     
@@ -169,11 +169,8 @@ async def create_iep_file(
     try:
         if file_type == "weekly_material":
             # weekly_material 타입일 때는 업로드된 파일이 weekly_content 형식
-            from ai_module.recommend_weekly_material import generate_weekly_materials
-            from pinecone import Pinecone
-            from sentence_transformers import SentenceTransformer
-            from openai import OpenAI
             import dotenv
+            from ai_module import recommend_weekly_material as rwm
             
             # 환경 변수 로드
             dotenv.load_dotenv()
@@ -214,7 +211,7 @@ async def create_iep_file(
             # 서비스 초기화
             logger.info("Pinecone, Embedding 모델, OpenAI 클라이언트 초기화 중...")
             try:
-                index = Pinecone(api_key=pinecone_api_key).Index("integrated-dense-py")
+                index = rwm.setup_pinecone(pinecone_api_key, "integrated-dense-py")
                 logger.info("Pinecone 인덱스 연결 완료")
             except Exception as e:
                 logger.error(f"Pinecone 초기화 실패: {e}")
@@ -224,7 +221,7 @@ async def create_iep_file(
                 )
             
             try:
-                embedding_model = SentenceTransformer('jhgan/ko-sroberta-multitask')
+                embedding_model = rwm.load_embedding_model('jhgan/ko-sroberta-multitask')
                 logger.info("Embedding 모델 로드 완료")
             except Exception as e:
                 logger.error(f"Embedding 모델 로드 실패: {e}")
@@ -234,7 +231,7 @@ async def create_iep_file(
                 )
             
             try:
-                openai_client = OpenAI(api_key=openai_api_key)
+                openai_client = rwm.setup_openai_client(openai_api_key)
                 logger.info("OpenAI 클라이언트 초기화 완료")
             except Exception as e:
                 logger.error(f"OpenAI 클라이언트 초기화 실패: {e}")
@@ -249,7 +246,7 @@ async def create_iep_file(
             
             try:
                 weekly_content = _normalize_weekly_content_shape(weekly_content)
-                result = generate_weekly_materials(
+                result = rwm.generate_weekly_materials(
                     index,
                     embedding_model,
                     openai_client,
@@ -360,38 +357,14 @@ async def create_iep_file(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Invalid student profile data: {str(e)}"
                 )
-            
-            # OpenAI 키 사전 검증 (명확한 오류 메시지 제공)
-            openai_key = os.getenv("OPENAI_API_KEY")
-            if not openai_key:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="OPENAI_API_KEY 환경 변수가 설정되지 않았습니다. .env를 확인하세요."
-                )
-            
-            from ai_module.llm import (
-                generate_goals_llm,
-                generate_weekly_plan_llm,
-            )
 
             if file_type == "student_info":
                 generated_data = profile_dict
             elif file_type == "goal":
-                # LLM이 반환하는 형식: {domain_key: {annual_goal, semester_goal}}
-                # 프론트엔드가 기대하는 형식: {annual_domain_key_goal, semester_domain_key_goal}
-                llm_result = generate_goals_llm(profile_dict)
-                generated_data = {"file_type": "goal"}
-                for domain_key, goals in llm_result.items():
-                    if isinstance(goals, dict):
-                        generated_data[f"annual_{domain_key}_goal"] = goals.get("annual_goal", "")
-                        generated_data[f"semester_{domain_key}_goal"] = goals.get("semester_goal", "")
-                    else:
-                        # 예외 처리: 형식이 맞지 않는 경우
-                        generated_data[f"annual_{domain_key}_goal"] = ""
-                        generated_data[f"semester_{domain_key}_goal"] = ""
+                generated_data = generate_goal_file_content(profile_dict)
             elif file_type == "weekly_content":
-                llm_result = generate_weekly_plan_llm(profile_dict)
-                generated_data = _normalize_weekly_content_shape(llm_result)
+                weekly_content = generate_weekly_content_file(profile_dict)
+                generated_data = _normalize_weekly_content_shape(weekly_content)
         
     except Exception as e:
         raise HTTPException(
